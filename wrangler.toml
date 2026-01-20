@@ -1,0 +1,14 @@
+// This file is automatically created by Cloudflare Pages
+// No configuration needed - Cloudflare will detect Vite automatically
+
+// Build Configuration (for reference):
+// Framework preset: Vite
+// Build command: npm run build
+// Build output directory: dist
+// Node version: 18 or higher
+
+// Environment Variables to set in Cloudflare Dashboard:
+// VITE_SUPABASE_URL=https://your-project.supabase.co
+// VITE_SUPABASE_ANON_KEY=your-anon-key
+
+// For SPA routing support, Cloudflare Pages automatically handles this for Vite projects
