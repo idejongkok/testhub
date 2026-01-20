@@ -2,6 +2,8 @@
 
 ## Langkah-langkah Deploy
 
+**PENTING:** Environment variables harus di-set SEBELUM deployment pertama, atau harus redeploy setelah menambahkan variables.
+
 ### 1. Login ke Cloudflare Dashboard
 - Buka https://dash.cloudflare.com/
 - Login dengan akun Cloudflare Anda
