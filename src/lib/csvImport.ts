@@ -102,12 +102,27 @@ export function parseQaseCSV(csvText: string): {
         rowData.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : 
         null
 
-      // Parse steps
-      const steps = parseSteps(
-        rowData.steps_actions,
-        rowData.steps_result,
-        rowData.steps_data
-      )
+      // Parse steps - try multiple formats
+      let steps = null
+
+      // Format 1: Qase format with steps_actions, steps_result
+      if (rowData.steps_actions || rowData.steps_result) {
+        steps = parseSteps(
+          rowData.steps_actions,
+          rowData.steps_result,
+          rowData.steps_data
+        )
+      }
+
+      // Format 2: Simple format with step_1_action, step_1_expected, etc
+      if (!steps) {
+        steps = parseSimpleSteps(rowData)
+      }
+
+      // Format 3: Single "steps" column with numbered list
+      if (!steps && rowData.steps) {
+        steps = parseNumberedSteps(rowData.steps)
+      }
 
       // Get expected result from last step or description
       const expected_result = steps && steps.length > 0 ? 
@@ -227,10 +242,10 @@ function parseSteps(
   // Split by numbered pattern: "1. ", "2. ", etc
   const actionPattern = /\d+\.\s+"([^"]+(?:""[^"]+)*)"/g
   const actionMatches = [...actions.matchAll(actionPattern)]
-  
+
   const resultPattern = /\d+\.\s+"([^"]+(?:""[^"]+)*)"/g
   const resultMatches = results ? [...results.matchAll(resultPattern)] : []
-  
+
   const dataPattern = /\d+\.\s+"([^"]+(?:""[^"]+)*)"/g
   const dataMatches = data ? [...data.matchAll(dataPattern)] : []
 
@@ -274,6 +289,70 @@ function parseSteps(
       })
     }
   })
+
+  return steps.length > 0 ? steps : null
+}
+
+function parseSimpleSteps(rowData: any): Array<{ step_number: number; action: string; expected_result: string }> | null {
+  const steps: Array<{ step_number: number; action: string; expected_result: string }> = []
+
+  // Look for step_1_action, step_2_action, etc.
+  for (let i = 1; i <= 20; i++) {
+    const action = rowData[`step_${i}_action`]
+    const expected = rowData[`step_${i}_expected`] || rowData[`step_${i}_result`] || ''
+
+    if (action && action.trim()) {
+      steps.push({
+        step_number: i,
+        action: cleanText(action) || action,
+        expected_result: cleanText(expected) || expected
+      })
+    } else {
+      break // Stop if no more steps
+    }
+  }
+
+  return steps.length > 0 ? steps : null
+}
+
+function parseNumberedSteps(stepsText: string): Array<{ step_number: number; action: string; expected_result: string }> | null {
+  if (!stepsText || !stepsText.trim()) return null
+
+  const steps: Array<{ step_number: number; action: string; expected_result: string }> = []
+
+  // Try to split by numbered patterns like "1. ", "2. ", "1) ", etc.
+  const lines = stepsText.split(/\n/)
+  let currentStep: { step_number: number; action: string; expected_result: string } | null = null
+  let stepNumber = 0
+
+  lines.forEach(line => {
+    const trimmed = line.trim()
+    if (!trimmed) return
+
+    // Check if line starts with number
+    const match = trimmed.match(/^(\d+)[.)\s]+(.+)$/)
+    if (match) {
+      // Save previous step if exists
+      if (currentStep) {
+        steps.push(currentStep)
+      }
+
+      stepNumber = parseInt(match[1])
+      currentStep = {
+        step_number: stepNumber,
+        action: match[2].trim(),
+        expected_result: ''
+      }
+    } else if (currentStep) {
+      // Continue current step
+      currentStep.action += '\n' + trimmed
+    }
+  })
+
+  // Don't forget the last step
+  if (currentStep) {
+    steps.push(currentStep)
+  }
 
   return steps.length > 0 ? steps : null
 }
