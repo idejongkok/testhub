@@ -5,13 +5,15 @@ import Layout from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Plus, FolderKanban, Trash2, Edit2 } from 'lucide-react'
+import { Plus, FolderKanban, Trash2, Edit2, Users } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import ProjectTeamModal from '@/components/ProjectTeamModal'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { projects, loading, fetchProjects, createProject, deleteProject, setCurrentProject } = useProjectStore()
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showTeamModal, setShowTeamModal] = useState<{id: string, name: string} | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -104,15 +106,28 @@ export default function DashboardPage() {
                   </p>
                   <div className="flex items-center justify-between text-xs text-gray-500">
                     <span>Created {formatDate(project.created_at)}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDelete(project.id)
-                      }}
-                      className="text-red-600 hover:text-red-700 p-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowTeamModal({ id: project.id, name: project.name })
+                        }}
+                        className="text-blue-600 hover:text-blue-700 p-1"
+                        title="Manage Team"
+                      >
+                        <Users className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(project.id)
+                        }}
+                        className="text-red-600 hover:text-red-700 p-1"
+                        title="Delete Project"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -181,6 +196,15 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Team Management Modal */}
+        {showTeamModal && (
+          <ProjectTeamModal
+            projectId={showTeamModal.id}
+            projectName={showTeamModal.name}
+            onClose={() => setShowTeamModal(null)}
+          />
         )}
       </div>
     </Layout>

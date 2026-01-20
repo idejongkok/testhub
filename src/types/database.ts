@@ -13,6 +13,7 @@ export type RunStatus = 'not_started' | 'in_progress' | 'completed'
 export type ResultStatus = 'passed' | 'failed' | 'blocked' | 'skipped' | 'in_progress' | 'untested'
 export type BugStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'wont_fix'
 export type BugSeverity = 'critical' | 'high' | 'medium' | 'low'
+export type ProjectRole = 'owner' | 'admin' | 'member' | 'viewer'
 
 export interface Database {
   public: {
@@ -44,6 +45,35 @@ export interface Database {
           created_by?: string | null
           created_at?: string
           updated_at?: string
+        }
+      }
+      project_members: {
+        Row: {
+          id: string
+          project_id: string
+          user_id: string
+          role: ProjectRole
+          invited_by: string | null
+          joined_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          user_id: string
+          role?: ProjectRole
+          invited_by?: string | null
+          joined_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          user_id?: string
+          role?: ProjectRole
+          invited_by?: string | null
+          joined_at?: string
+          created_at?: string
         }
       }
       test_suites: {
