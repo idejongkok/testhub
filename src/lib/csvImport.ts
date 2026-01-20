@@ -184,9 +184,12 @@ function parseCSVLine(line: string): string[] {
 
 function mapPriority(priority: string, severity: string): Priority {
   // Prioritize severity over priority if available
-  const level = (severity && severity !== 'undefined' ? severity : priority).toLowerCase()
-  
-  if (!level || level === 'undefined' || level === 'null') return 'medium'
+  const rawLevel = severity && severity !== 'undefined' ? severity : priority
+  if (!rawLevel) return 'medium'
+
+  const level = String(rawLevel).toLowerCase()
+
+  if (!level || level === 'undefined' || level === 'null' || level === '') return 'medium'
   if (level.includes('blocker') || level.includes('critical')) return 'critical'
   if (level.includes('major') || level.includes('high')) return 'high'
   if (level.includes('minor') || level.includes('medium') || level.includes('normal')) return 'medium'
@@ -195,16 +198,20 @@ function mapPriority(priority: string, severity: string): Priority {
 }
 
 function mapTestType(type: string): TestType {
-  const typeStr = type.toLowerCase()
-  
+  if (!type) return 'functional_web'
+
+  const typeStr = String(type).toLowerCase()
+
   if (typeStr.includes('api')) return 'api'
   if (typeStr.includes('mobile')) return 'functional_mobile'
   return 'functional_web'
 }
 
 function mapStatus(status: string): Status {
-  const statusStr = status.toLowerCase()
-  
+  if (!status) return 'draft'
+
+  const statusStr = String(status).toLowerCase()
+
   if (statusStr === 'actual' || statusStr === 'ready' || statusStr === 'approved') return 'ready'
   if (statusStr === 'deprecated' || statusStr === 'obsolete') return 'deprecated'
   return 'draft'
