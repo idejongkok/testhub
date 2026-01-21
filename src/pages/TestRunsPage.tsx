@@ -109,13 +109,16 @@ export default function TestRunsPage() {
 
       if (!error && newRun && formData.test_plan_id) {
         // Copy test cases from plan
-        const { data: planCases } = await supabase
+        const { data: planCases, error: planError } = await supabase
           .from('test_plan_cases')
           .select('test_case_id')
           .eq('test_plan_id', formData.test_plan_id)
 
-        if (planCases && planCases.length > 0) {
-          await supabase
+        if (planError) {
+          console.error('Error fetching test plan cases:', planError)
+          alert('Failed to load test cases from test plan: ' + planError.message)
+        } else if (planCases && planCases.length > 0) {
+          const { error: insertError } = await supabase
             .from('test_run_results')
             .insert(
               planCases.map(pc => ({
@@ -124,6 +127,13 @@ export default function TestRunsPage() {
                 result_status: 'untested' as const,
               }))
             )
+
+          if (insertError) {
+            console.error('Error inserting test run results:', insertError)
+            alert('Failed to copy test cases to test run: ' + insertError.message)
+          }
+        } else if (planCases && planCases.length === 0) {
+          alert('The selected test plan has no test cases. Please add test cases to the test plan first.')
         }
       }
 
