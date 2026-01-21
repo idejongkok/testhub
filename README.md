@@ -277,6 +277,13 @@ MIT License - feel free to use for personal and commercial projects.
 - Ensure build command is `npm run build`
 - Verify Node version compatibility (use Node 18+)
 
+## 📚 Documentation
+
+Comprehensive documentation available in `/docs/` folder:
+- **Guides:** Setup, deployment, and usage guides
+- **Features:** Detailed feature documentation
+- **Migrations:** Database migration docs in `/migrations/`
+
 ## 📞 Support
 
 For issues or questions:
@@ -286,4 +293,4 @@ For issues or questions:
 
 ---
 
-**Built with ❤️ for QA Engineers**
+**TestHub by Uno - Ide Jongkok**
