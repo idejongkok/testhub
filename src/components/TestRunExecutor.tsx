@@ -54,6 +54,7 @@ export default function TestRunExecutor({
   }
 
   useEffect(() => {
+    console.log('TestRunExecutor mounted, testRunId:', testRunId)
     // Load existing results
     const initial: { [key: string]: ExecutionState } = {}
     existingResults.forEach(result => {
@@ -66,6 +67,10 @@ export default function TestRunExecutor({
       }
     })
     setExecutionData(initial)
+
+    return () => {
+      console.log('TestRunExecutor unmounting')
+    }
   }, [existingResults])
 
   const updateCurrentExecution = (updates: Partial<ExecutionState>) => {
@@ -156,6 +161,8 @@ export default function TestRunExecutor({
 
   const saveCurrentResult = async () => {
     if (!currentCase || !user) return
+
+    console.log('saveCurrentResult called for test case:', currentCase.id, 'with status:', currentExecution.result_status)
 
     setSaving(true)
     try {

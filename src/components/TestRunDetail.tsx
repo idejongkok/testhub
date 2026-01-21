@@ -107,6 +107,31 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
     }
   }
 
+  const updateTestRunStatus = async () => {
+    // Update test run status based on actual database results
+    const { data: allResults } = await supabase
+      .from('test_run_results')
+      .select('result_status')
+      .eq('test_run_id', testRun.id)
+
+    if (allResults) {
+      const totalExecuted = allResults.filter(r => r.result_status !== 'untested').length
+      const totalTests = allResults.length
+
+      let runStatus: 'not_started' | 'in_progress' | 'completed' = 'not_started'
+      if (totalExecuted === totalTests && totalTests > 0) {
+        runStatus = 'completed'
+      } else if (totalExecuted > 0) {
+        runStatus = 'in_progress'
+      }
+
+      await supabase
+        .from('test_runs')
+        .update({ run_status: runStatus })
+        .eq('id', testRun.id)
+    }
+  }
+
   const handleStatusChange = async (resultId: string, status: ResultStatus) => {
     await supabase
       .from('test_run_results')
@@ -117,6 +142,7 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
       })
       .eq('id', resultId)
 
+    await updateTestRunStatus()
     fetchResults()
     onUpdate()
   }
@@ -139,6 +165,7 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
     )
 
     await Promise.all(updates)
+    await updateTestRunStatus()
     setSelectedIds(new Set())
     fetchResults()
     onUpdate()
