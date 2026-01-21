@@ -179,6 +179,7 @@ export default function TestRunsPage() {
       .from('test_run_results')
       .select('*, test_cases(*)')
       .eq('test_run_id', run.id)
+      .order('position', { ascending: true })
 
     if (results && results.length > 0) {
       const cases = results.map((r: any) => r.test_cases).filter(Boolean)

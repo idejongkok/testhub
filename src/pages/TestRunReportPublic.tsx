@@ -56,6 +56,7 @@ export default function TestRunReportPublic() {
         )
       `)
       .eq('test_run_id', id)
+      .order('position', { ascending: true })
 
     if (runData) setTestRun(runData)
     if (resultsData) setResults(resultsData as TestRunResult[])

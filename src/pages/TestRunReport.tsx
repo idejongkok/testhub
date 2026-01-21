@@ -65,6 +65,7 @@ export default function TestRunReport() {
         executor:user_profiles(email, full_name)
       `)
       .eq('test_run_id', id)
+      .order('position', { ascending: true })
 
     if (runData) setTestRun(runData)
     if (resultsData) setResults(resultsData as TestRunResult[])

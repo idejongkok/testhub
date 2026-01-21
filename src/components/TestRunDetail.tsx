@@ -14,11 +14,29 @@ import {
   PlayCircle,
   Bug,
   FileText,
+  GripVertical,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database, ResultStatus } from '@/types/database'
 import { useAuthStore } from '@/store/authStore'
 import { useProjectStore } from '@/store/projectStore'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 type TestCase = Database['public']['Tables']['test_cases']['Row']
 type TestRunResult = Database['public']['Tables']['test_run_results']['Row']
@@ -53,6 +71,13 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
     fetchAllTestCases()
   }, [testRun.id])
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
   const fetchResults = async () => {
     setLoading(true)
     const { data, error } = await supabase
@@ -62,6 +87,7 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
         test_case:test_cases(*)
       `)
       .eq('test_run_id', testRun.id)
+      .order('position', { ascending: true })
 
     if (!error && data) {
       setResults(data as EnrichedResult[])
@@ -145,15 +171,50 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
   }
 
   const handleAddTestCases = async (testCaseIds: string[]) => {
-    const inserts = testCaseIds.map(testCaseId => ({
+    // Get current max position
+    const maxPosition = results.length > 0
+      ? Math.max(...results.map(r => r.position || 0))
+      : -1
+
+    const inserts = testCaseIds.map((testCaseId, index) => ({
       test_run_id: testRun.id,
       test_case_id: testCaseId,
       result_status: 'untested' as ResultStatus,
+      position: maxPosition + 1 + index,
     }))
 
     await supabase.from('test_run_results').insert(inserts)
     setShowAddModal(false)
     fetchResults()
+    onUpdate()
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (!over || active.id === over.id) {
+      return
+    }
+
+    const oldIndex = results.findIndex(r => r.id === active.id)
+    const newIndex = results.findIndex(r => r.id === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return
+    }
+
+    const newResults = arrayMove(results, oldIndex, newIndex)
+    setResults(newResults)
+
+    // Update positions in database
+    const updates = newResults.map((result, index) =>
+      supabase
+        .from('test_run_results')
+        .update({ position: index })
+        .eq('id', result.id)
+    )
+
+    await Promise.all(updates)
     onUpdate()
   }
 
@@ -226,6 +287,149 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
     blocked: results.filter(r => r.result_status === 'blocked').length,
     skipped: results.filter(r => r.result_status === 'skipped').length,
     untested: results.filter(r => r.result_status === 'untested').length,
+  }
+
+  // Sortable Item Component
+  function SortableTestCaseItem({ result }: { result: EnrichedResult }) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: result.id })
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    }
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`p-4 rounded-lg border ${
+          selectedIds.has(result.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          {/* Drag Handle */}
+          <div
+            {...attributes}
+            {...listeners}
+            className="flex-shrink-0 mt-1 cursor-grab active:cursor-grabbing hover:text-primary-600"
+            title="Drag to reorder"
+          >
+            <GripVertical className="w-5 h-5 text-gray-400" />
+          </div>
+
+          <input
+            type="checkbox"
+            checked={selectedIds.has(result.id)}
+            onChange={() => toggleSelect(result.id)}
+            className="mt-1 rounded"
+          />
+
+          <div className="flex-shrink-0 mt-1">{getStatusIcon(result.result_status)}</div>
+
+          <div className="flex-1">
+            <h4
+              className="font-medium text-gray-900 hover:text-primary-600 cursor-pointer"
+              onClick={() => {
+                setSelectedTestCase(result.test_case || null)
+                setShowDetailModal(true)
+              }}
+            >
+              {result.test_case?.title || 'Unknown Test Case'}
+            </h4>
+            {result.test_case && (
+              <div className="flex gap-2 mt-1">
+                <span
+                  className={`px-2 py-0.5 text-xs rounded ${
+                    result.test_case.test_type === 'api'
+                      ? 'bg-purple-100 text-purple-700'
+                      : result.test_case.test_type === 'functional_mobile'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-blue-100 text-blue-700'
+                  }`}
+                >
+                  {result.test_case.test_type}
+                </span>
+                <span
+                  className={`px-2 py-0.5 text-xs rounded ${
+                    result.test_case.priority === 'critical'
+                      ? 'bg-red-100 text-red-700'
+                      : result.test_case.priority === 'high'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {result.test_case.priority}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex gap-1">
+            <button
+              onClick={() => {
+                setSelectedTestCase(result.test_case || null)
+                setShowDetailModal(true)
+              }}
+              className="p-2 hover:bg-blue-50 rounded"
+              title="View Details"
+            >
+              <FileText className="w-4 h-4 text-blue-600" />
+            </button>
+            <button
+              onClick={() => handleStatusChange(result.id, 'passed')}
+              className="p-2 hover:bg-green-50 rounded"
+              title="Pass"
+            >
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            </button>
+            <button
+              onClick={() => handleStatusChange(result.id, 'failed')}
+              className="p-2 hover:bg-red-50 rounded"
+              title="Fail"
+            >
+              <XCircle className="w-4 h-4 text-red-600" />
+            </button>
+            <button
+              onClick={() => handleStatusChange(result.id, 'blocked')}
+              className="p-2 hover:bg-yellow-50 rounded"
+              title="Block"
+            >
+              <AlertCircle className="w-4 h-4 text-yellow-600" />
+            </button>
+            <button
+              onClick={() => handleStatusChange(result.id, 'skipped')}
+              className="p-2 hover:bg-gray-50 rounded"
+              title="Skip"
+            >
+              <Clock className="w-4 h-4 text-gray-600" />
+            </button>
+            <button
+              onClick={() => handleReportBug(result)}
+              className="p-2 hover:bg-orange-50 rounded"
+              title="Report Bug"
+            >
+              <Bug className="w-4 h-4 text-orange-600" />
+            </button>
+            <button
+              onClick={() => handleRemoveTestCase(result.id)}
+              className="p-2 hover:bg-red-50 rounded"
+              title="Remove"
+            >
+              <Trash2 className="w-4 h-4 text-red-600" />
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -349,121 +553,22 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
               No test cases match the selected filter.
             </div>
           ) : (
-            <div className="space-y-2">
-              {filteredResults.map(result => (
-                <div
-                  key={result.id}
-                  className={`p-4 rounded-lg border ${
-                    selectedIds.has(result.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(result.id)}
-                      onChange={() => toggleSelect(result.id)}
-                      className="mt-1 rounded"
-                    />
-
-                    <div className="flex-shrink-0 mt-1">{getStatusIcon(result.result_status)}</div>
-
-                    <div className="flex-1">
-                      <h4
-                        className="font-medium text-gray-900 hover:text-primary-600 cursor-pointer"
-                        onClick={() => {
-                          setSelectedTestCase(result.test_case || null)
-                          setShowDetailModal(true)
-                        }}
-                      >
-                        {result.test_case?.title || 'Unknown Test Case'}
-                      </h4>
-                      {result.test_case && (
-                        <div className="flex gap-2 mt-1">
-                          <span
-                            className={`px-2 py-0.5 text-xs rounded ${
-                              result.test_case.test_type === 'api'
-                                ? 'bg-purple-100 text-purple-700'
-                                : result.test_case.test_type === 'functional_mobile'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-blue-100 text-blue-700'
-                            }`}
-                          >
-                            {result.test_case.test_type}
-                          </span>
-                          <span
-                            className={`px-2 py-0.5 text-xs rounded ${
-                              result.test_case.priority === 'critical'
-                                ? 'bg-red-100 text-red-700'
-                                : result.test_case.priority === 'high'
-                                ? 'bg-orange-100 text-orange-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}
-                          >
-                            {result.test_case.priority}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Quick Actions */}
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => {
-                          setSelectedTestCase(result.test_case || null)
-                          setShowDetailModal(true)
-                        }}
-                        className="p-2 hover:bg-blue-50 rounded"
-                        title="View Details"
-                      >
-                        <FileText className="w-4 h-4 text-blue-600" />
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(result.id, 'passed')}
-                        className="p-2 hover:bg-green-50 rounded"
-                        title="Pass"
-                      >
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(result.id, 'failed')}
-                        className="p-2 hover:bg-red-50 rounded"
-                        title="Fail"
-                      >
-                        <XCircle className="w-4 h-4 text-red-600" />
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(result.id, 'blocked')}
-                        className="p-2 hover:bg-yellow-50 rounded"
-                        title="Block"
-                      >
-                        <AlertCircle className="w-4 h-4 text-yellow-600" />
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(result.id, 'skipped')}
-                        className="p-2 hover:bg-gray-50 rounded"
-                        title="Skip"
-                      >
-                        <Clock className="w-4 h-4 text-gray-600" />
-                      </button>
-                      <button
-                        onClick={() => handleReportBug(result)}
-                        className="p-2 hover:bg-orange-50 rounded"
-                        title="Report Bug"
-                      >
-                        <Bug className="w-4 h-4 text-orange-600" />
-                      </button>
-                      <button
-                        onClick={() => handleRemoveTestCase(result.id)}
-                        className="p-2 hover:bg-red-50 rounded"
-                        title="Remove"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </button>
-                    </div>
-                  </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={filteredResults.map(r => r.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {filteredResults.map(result => (
+                    <SortableTestCaseItem key={result.id} result={result} />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           )}
         </CardContent>
       </Card>

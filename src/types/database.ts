@@ -305,6 +305,7 @@ export interface Database {
           execution_time: number | null
           executed_by: string | null
           executed_at: string | null
+          position: number
           created_at: string
           updated_at: string
         }
@@ -319,6 +320,7 @@ export interface Database {
           execution_time?: number | null
           executed_by?: string | null
           executed_at?: string | null
+          position?: number
           created_at?: string
           updated_at?: string
         }
@@ -333,6 +335,7 @@ export interface Database {
           execution_time?: number | null
           executed_by?: string | null
           executed_at?: string | null
+          position?: number
           created_at?: string
           updated_at?: string
         }
