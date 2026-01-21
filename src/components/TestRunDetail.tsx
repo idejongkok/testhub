@@ -13,6 +13,7 @@ import {
   Trash2,
   PlayCircle,
   Bug,
+  FileText,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database, ResultStatus } from '@/types/database'
@@ -44,6 +45,8 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
   const [showAddModal, setShowAddModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<ResultStatus | 'all'>('all')
+  const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null)
+  const [showDetailModal, setShowDetailModal] = useState(false)
 
   useEffect(() => {
     fetchResults()
@@ -365,7 +368,13 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
                     <div className="flex-shrink-0 mt-1">{getStatusIcon(result.result_status)}</div>
 
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">
+                      <h4
+                        className="font-medium text-gray-900 hover:text-primary-600 cursor-pointer"
+                        onClick={() => {
+                          setSelectedTestCase(result.test_case || null)
+                          setShowDetailModal(true)
+                        }}
+                      >
                         {result.test_case?.title || 'Unknown Test Case'}
                       </h4>
                       {result.test_case && (
@@ -398,6 +407,16 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
 
                     {/* Quick Actions */}
                     <div className="flex gap-1">
+                      <button
+                        onClick={() => {
+                          setSelectedTestCase(result.test_case || null)
+                          setShowDetailModal(true)
+                        }}
+                        className="p-2 hover:bg-blue-50 rounded"
+                        title="View Details"
+                      >
+                        <FileText className="w-4 h-4 text-blue-600" />
+                      </button>
                       <button
                         onClick={() => handleStatusChange(result.id, 'passed')}
                         className="p-2 hover:bg-green-50 rounded"
@@ -513,6 +532,134 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Test Case Detail Modal */}
+      {showDetailModal && selectedTestCase && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <Card className="w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <CardTitle>{selectedTestCase.title}</CardTitle>
+                  <div className="flex gap-2 mt-2">
+                    <span
+                      className={`px-2 py-0.5 text-xs rounded ${
+                        selectedTestCase.test_type === 'api'
+                          ? 'bg-purple-100 text-purple-700'
+                          : selectedTestCase.test_type === 'functional_mobile'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-blue-100 text-blue-700'
+                      }`}
+                    >
+                      {selectedTestCase.test_type}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 text-xs rounded ${
+                        selectedTestCase.priority === 'critical'
+                          ? 'bg-red-100 text-red-700'
+                          : selectedTestCase.priority === 'high'
+                          ? 'bg-orange-100 text-orange-700'
+                          : selectedTestCase.priority === 'medium'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {selectedTestCase.priority}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 text-xs rounded ${
+                        selectedTestCase.status === 'ready'
+                          ? 'bg-green-100 text-green-700'
+                          : selectedTestCase.status === 'draft'
+                          ? 'bg-gray-100 text-gray-700'
+                          : 'bg-orange-100 text-orange-700'
+                      }`}
+                    >
+                      {selectedTestCase.status}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto">
+              {/* Description */}
+              {selectedTestCase.description && (
+                <div className="mb-6">
+                  <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                  <p className="text-gray-700 whitespace-pre-wrap">{selectedTestCase.description}</p>
+                </div>
+              )}
+
+              {/* Preconditions */}
+              {selectedTestCase.preconditions && (
+                <div className="mb-6">
+                  <h3 className="font-semibold text-gray-900 mb-2">Preconditions</h3>
+                  <p className="text-gray-700 whitespace-pre-wrap">{selectedTestCase.preconditions}</p>
+                </div>
+              )}
+
+              {/* Steps */}
+              {selectedTestCase.steps && Array.isArray(selectedTestCase.steps) && selectedTestCase.steps.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-semibold text-gray-900 mb-3">Test Steps</h3>
+                  <div className="space-y-3">
+                    {(selectedTestCase.steps as Array<{ step_number: number; action: string; expected_result: string }>).map((step, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center text-sm font-medium">
+                            {step.step_number}
+                          </span>
+                          <div className="flex-1">
+                            <div className="mb-2">
+                              <span className="font-medium text-gray-900">Action:</span>
+                              <p className="text-gray-700 mt-1">{step.action}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-900">Expected Result:</span>
+                              <p className="text-gray-700 mt-1">{step.expected_result}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Expected Result (legacy) */}
+              {selectedTestCase.expected_result && (
+                <div className="mb-6">
+                  <h3 className="font-semibold text-gray-900 mb-2">Expected Result</h3>
+                  <p className="text-gray-700 whitespace-pre-wrap">{selectedTestCase.expected_result}</p>
+                </div>
+              )}
+
+              {/* Tags */}
+              {selectedTestCase.tags && selectedTestCase.tags.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-semibold text-gray-900 mb-2">Tags</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedTestCase.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>
