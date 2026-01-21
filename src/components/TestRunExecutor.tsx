@@ -119,22 +119,29 @@ export default function TestRunExecutor({
 
   const handleSaveAndClose = async () => {
     await saveCurrentResult()
-    
-    // Update test run status
-    const allResults = Object.values(executionData)
-    const totalExecuted = allResults.filter(r => r.result_status !== 'untested').length
-    
-    let runStatus: 'not_started' | 'in_progress' | 'completed' = 'not_started'
-    if (totalExecuted === testCases.length) {
-      runStatus = 'completed'
-    } else if (totalExecuted > 0) {
-      runStatus = 'in_progress'
-    }
 
-    await supabase
-      .from('test_runs')
-      .update({ run_status: runStatus })
-      .eq('id', testRunId)
+    // Update test run status based on actual database results
+    const { data: results } = await supabase
+      .from('test_run_results')
+      .select('result_status')
+      .eq('test_run_id', testRunId)
+
+    if (results) {
+      const totalExecuted = results.filter(r => r.result_status !== 'untested').length
+      const totalTests = results.length
+
+      let runStatus: 'not_started' | 'in_progress' | 'completed' = 'not_started'
+      if (totalExecuted === totalTests && totalTests > 0) {
+        runStatus = 'completed'
+      } else if (totalExecuted > 0) {
+        runStatus = 'in_progress'
+      }
+
+      await supabase
+        .from('test_runs')
+        .update({ run_status: runStatus })
+        .eq('id', testRunId)
+    }
 
     onComplete()
   }
