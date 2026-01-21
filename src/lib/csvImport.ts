@@ -297,6 +297,7 @@ function parseSimpleSteps(rowData: any): Array<{ step_number: number; action: st
   const steps: Array<{ step_number: number; action: string; expected_result: string }> = []
 
   // Look for step_1_action, step_2_action, etc.
+  // Continue through all possible steps instead of breaking at first empty one
   for (let i = 1; i <= 20; i++) {
     const action = rowData[`step_${i}_action`]
     const expected = rowData[`step_${i}_expected`] || rowData[`step_${i}_result`] || ''
@@ -307,9 +308,8 @@ function parseSimpleSteps(rowData: any): Array<{ step_number: number; action: st
         action: cleanText(action) || action,
         expected_result: cleanText(expected) || expected
       })
-    } else {
-      break // Stop if no more steps
     }
+    // Continue to check all 20 possible steps, don't break on empty steps
   }
 
   return steps.length > 0 ? steps : null
