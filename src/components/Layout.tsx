@@ -174,9 +174,18 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main Content */}
       <div className="pl-64">
-        <main className="p-8">
+        <main className="p-8 min-h-[calc(100vh-60px)]">
           {children}
         </main>
+
+        {/* Footer Signature */}
+        <footer className="border-t border-gray-200 bg-white px-8 py-4">
+          <div className="flex items-center justify-center text-sm text-gray-600">
+            <span className="font-medium text-primary-600">TestHub</span>
+            <span className="mx-2">by</span>
+            <span className="font-medium">Uno - Ide Jongkok</span>
+          </div>
+        </footer>
       </div>
     </div>
   )
