@@ -1,0 +1,666 @@
+"title","description","test_type","priority","status","preconditions","step_1_action","step_1_expected","step_2_action","step_2_expected","step_3_action","step_3_expected","step_4_action","step_4_expected","step_5_action","step_5_expected","tags","suite_name"
+"Verify Social Club landing page displays correctly for new users - ANDROID","Validate social club landing page displays correctly for new users","functional_android","high","ready","User is logged into RoaminRabbit Android app; User has never accessed Social Club before; User is not a Social Club member","Launch RoaminRabbit Android app","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe the landing page content","Landing page displays successfully with:
+- Large full-width introductory image that changes every 1000ms
+- Animated scroll indicator below headline
+- 'About Section' showing current member count
+- Display of 35 most recent members' profile pictures (only members with uploaded photos)
+- Preview of upcoming events (earliest event from CMS)
+- Up to 5 avatars of most recent member registrations
+- 'X Participants' tag pulled from event management
+- 'Request to Join' button visible at bottom (sticky placement)","","","","","social-club, introduction, ui-validation,android","Social Club Introduction"
+"Verify Social Club landing page displays correctly for new users - IOS","Validate social club landing page displays correctly for new users","functional_ios","high","ready","User is logged into RoaminRabbit iOS app; User has never accessed Social Club before; User is not a Social Club member","Launch RoaminRabbit iOS app","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe the landing page content","Landing page displays successfully with:
+- Large full-width introductory image that changes every 1000ms
+- Animated scroll indicator below headline
+- 'About Section' showing current member count
+- Display of 35 most recent members' profile pictures (only members with uploaded photos)
+- Preview of upcoming events (earliest event from CMS)
+- Up to 5 avatars of most recent member registrations
+- 'X Participants' tag pulled from event management
+- 'Request to Join' button visible at bottom (sticky placement)","","","","","social-club, introduction, ui-validation,ios","Social Club Introduction"
+"Verify 'Request to Join' button remains sticky on scroll - ANDROID","Validate 'request to join' button remains sticky on scroll","functional_android","medium","ready","User is on Social Club landing page; User is not an approved member","Scroll down through landing page sections","Step completes as expected","Observe 'Request to Join' button position","Step completes as expected","Scroll to bottom of page","Step completes as expected","Scroll back to top","Request to Join button:
+- Remains visible at bottom of screen at all times during scroll
+- Maintains sticky placement throughout all scroll sections
+- Button is always accessible without needing to scroll back","","","social-club, ui-behavior, sticky-cta,android","Social Club Introduction"
+"Verify 'Request to Join' button remains sticky on scroll - IOS","Validate 'request to join' button remains sticky on scroll","functional_ios","medium","ready","User is on Social Club landing page; User is not an approved member","Scroll down through landing page sections","Step completes as expected","Observe 'Request to Join' button position","Step completes as expected","Scroll to bottom of page","Step completes as expected","Scroll back to top","Request to Join button:
+- Remains visible at bottom of screen at all times during scroll
+- Maintains sticky placement throughout all scroll sections
+- Button is always accessible without needing to scroll back","","","social-club, ui-behavior, sticky-cta,ios","Social Club Introduction"
+"Verify Request to Join button hidden for approved members - ANDROID","Validate request to join button hidden for approved members","functional_android","high","ready","User is logged into RoaminRabbit Android app; User membershipStatus = Approved","Navigate to Social Club section","Step completes as expected","Scroll through landing page","Step completes as expected","Check for visibility of 'Request to Join' button","'Request to Join' button is hidden
+User sees member-specific content instead (Social Club Home)","","","","","social-club, state-management, approved-member,android","Social Club Introduction"
+"Verify Request to Join button hidden for approved members - IOS","Validate request to join button hidden for approved members","functional_ios","high","ready","User is logged into RoaminRabbit iOS app; User membershipStatus = Approved","Navigate to Social Club section","Step completes as expected","Scroll through landing page","Step completes as expected","Check for visibility of 'Request to Join' button","'Request to Join' button is hidden
+User sees member-specific content instead (Social Club Home)","","","","","social-club, state-management, approved-member,ios","Social Club Introduction"
+"Open Request to Join form modal when CTA clicked - ANDROID","Validate open request to join form modal when cta clicked","functional_android","high","ready","User is on Social Club landing page; User is not an approved member; 'Request to Join' button is visible","Tap on 'Request to Join' button","Step completes as expected","Observe modal behavior","Modal opens with membership request form containing:
+- First Name field (prefilled if available)
+- Last Name field (prefilled if available)
+- WhatsApp Number field with country code selector (prefilled if available and user has done registration)
+- Gender selection (single selection required)
+- Age Group selection (single selection required)
+- Submit button at bottom","","","","","","","social-club, modal, form-display,android","Request to Join Form"
+"Open Request to Join form modal when CTA clicked - IOS","Validate open request to join form modal when cta clicked","functional_ios","high","ready","User is on Social Club landing page; User is not an approved member; 'Request to Join' button is visible","Tap on 'Request to Join' button","Step completes as expected","Observe modal behavior","Modal opens with membership request form containing:
+- First Name field (prefilled if available)
+- Last Name field (prefilled if available)
+- WhatsApp Number field with country code selector (prefilled if available and user has done registration)
+- Gender selection (single selection required)
+- Age Group selection (single selection required)
+- Submit button at bottom","","","","","","","social-club, modal, form-display,ios","Request to Join Form"
+"Verify form fields prefilled with existing user data - ANDROID","Validate form fields prefilled with existing user data","functional_android","medium","ready","User is logged in with complete profile; User profile contains: First Name, Last Name, WhatsApp Number; User opens Request to Join form","Open 'Request to Join' form","Step completes as expected","Check First Name field value","Step completes as expected","Check Last Name field value","Step completes as expected","Check WhatsApp Number field value","Step completes as expected","Check Country Code selector","Form displays with:
+- First Name prefilled with user's first name from profile
+- Last Name prefilled with user's last name from profile
+- WhatsApp Number prefilled with registered phone number
+- Country code selector defaults to user's location","social-club, form-prefill, user-data,android","Request to Join Form"
+"Verify form fields prefilled with existing user data - IOS","Validate form fields prefilled with existing user data","functional_ios","medium","ready","User is logged in with complete profile; User profile contains: First Name, Last Name, WhatsApp Number; User opens Request to Join form","Open 'Request to Join' form","Step completes as expected","Check First Name field value","Step completes as expected","Check Last Name field value","Step completes as expected","Check WhatsApp Number field value","Step completes as expected","Check Country Code selector","Form displays with:
+- First Name prefilled with user's first name from profile
+- Last Name prefilled with user's last name from profile
+- WhatsApp Number prefilled with registered phone number
+- Country code selector defaults to user's location","social-club, form-prefill, user-data,ios","Request to Join Form"
+"Submit complete Request to Join form successfully - ANDROID","Validate submit complete request to join form successfully","functional_android","high","ready","User has opened Request to Join form; All form fields are filled with valid data:; - First Name: 'John'; - Last Name: 'Doe'; - WhatsApp: '+6281234567890'; - Gender: 'Male'; - Age Group: '25-34'","Fill in First Name: 'John'","Step completes as expected","Fill in Last Name: 'Doe'","Step completes as expected","Enter WhatsApp Number: '+6281234567890'","Step completes as expected","Select Gender: 'Male'","Step completes as expected","Select Age Group: '25-34'","Step completes as expected","social-club, form-submission, positive-flow,android","Request to Join Form"
+"Submit complete Request to Join form successfully - IOS","Validate submit complete request to join form successfully","functional_ios","high","ready","User has opened Request to Join form; All form fields are filled with valid data:; - First Name: 'John'; - Last Name: 'Doe'; - WhatsApp: '+6281234567890'; - Gender: 'Male'; - Age Group: '25-34'","Fill in First Name: 'John'","Step completes as expected","Fill in Last Name: 'Doe'","Step completes as expected","Enter WhatsApp Number: '+6281234567890'","Step completes as expected","Select Gender: 'Male'","Step completes as expected","Select Age Group: '25-34'","Step completes as expected","social-club, form-submission, positive-flow,ios","Request to Join Form"
+"Verify OTP flow triggered when user changes phone number - ANDROID","Validate otp flow triggered when user changes phone number","functional_android","high","ready","User has existing registered phone number: '+6281234567890'; User opens Request to Join form","Change WhatsApp Number to new number: '+6289876543210'","Step completes as expected","Complete other required fields","Step completes as expected","Tap submit button","Step completes as expected","Observe system response","OTP verification flow opens:
+- System detects phone number change
+- OTP sent to new phone number
+- User prompted to enter OTP code
+- Form submission proceeds after OTP verification","","","social-club, otp, phone-verification,android","Request to Join Form"
+"Verify OTP flow triggered when user changes phone number - IOS","Validate otp flow triggered when user changes phone number","functional_ios","high","ready","User has existing registered phone number: '+6281234567890'; User opens Request to Join form","Change WhatsApp Number to new number: '+6289876543210'","Step completes as expected","Complete other required fields","Step completes as expected","Tap submit button","Step completes as expected","Observe system response","OTP verification flow opens:
+- System detects phone number change
+- OTP sent to new phone number
+- User prompted to enter OTP code
+- Form submission proceeds after OTP verification","","","social-club, otp, phone-verification,ios","Request to Join Form"
+"Verify submit button disabled with incomplete form - ANDROID","Validate submit button disabled with incomplete form","functional_android","high","ready","User has opened Request to Join form","Leave First Name field empty","Step completes as expected","Fill Last Name: 'Doe'","Step completes as expected","Fill WhatsApp Number: '+6281234567890'","Step completes as expected","Select Gender: 'Male'","Step completes as expected","Leave Age Group unselected","Step completes as expected","social-club, form-validation, negative,android","Request to Join Form"
+"Verify submit button disabled with incomplete form - IOS","Validate submit button disabled with incomplete form","functional_ios","high","ready","User has opened Request to Join form","Leave First Name field empty","Step completes as expected","Fill Last Name: 'Doe'","Step completes as expected","Fill WhatsApp Number: '+6281234567890'","Step completes as expected","Select Gender: 'Male'","Step completes as expected","Leave Age Group unselected","Step completes as expected","social-club, form-validation, negative,ios","Request to Join Form"
+"Verify error message for duplicate phone number - ANDROID","Validate error message for duplicate phone number","functional_android","high","ready","Phone number '+6281234567890' already registered in system; User opens Request to Join form","Fill First Name: 'Jane'","Step completes as expected","Fill Last Name: 'Smith'","Step completes as expected","Enter WhatsApp Number: '+6281234567890' (duplicate)","Step completes as expected","Select Gender: 'Female'","Step completes as expected","Select Age Group: '25-34'","Step completes as expected","social-club, error-handling, duplicate-validation,android","Request to Join Form"
+"Verify error message for duplicate phone number - IOS","Validate error message for duplicate phone number","functional_ios","high","ready","Phone number '+6281234567890' already registered in system; User opens Request to Join form","Fill First Name: 'Jane'","Step completes as expected","Fill Last Name: 'Smith'","Step completes as expected","Enter WhatsApp Number: '+6281234567890' (duplicate)","Step completes as expected","Select Gender: 'Female'","Step completes as expected","Select Age Group: '25-34'","Step completes as expected","social-club, error-handling, duplicate-validation,ios","Request to Join Form"
+"Verify network error handling on form submission - ANDROID","Validate network error handling on form submission","functional_android","medium","ready","User has filled complete Request to Join form; Network connection is simulated to fail","Fill all form fields with valid data","Step completes as expected","Disable network connection or simulate API failure","Step completes as expected","Tap submit button","Step completes as expected","Observe error handling","Error toast displayed:
+- Message shows: 'Unable to submit. Try again.'
+- Form data remains intact
+- User can retry submission
+- Loading state ends","","","social-club, error-handling, network-failure,android","Request to Join Form"
+"Verify network error handling on form submission - IOS","Validate network error handling on form submission","functional_ios","medium","ready","User has filled complete Request to Join form; Network connection is simulated to fail","Fill all form fields with valid data","Step completes as expected","Disable network connection or simulate API failure","Step completes as expected","Tap submit button","Step completes as expected","Observe error handling","Error toast displayed:
+- Message shows: 'Unable to submit. Try again.'
+- Form data remains intact
+- User can retry submission
+- Loading state ends","","","social-club, error-handling, network-failure,ios","Request to Join Form"
+"Verify Welcome Modal displays after membership approval - ANDROID","Validate welcome modal displays after membership approval","functional_android","high","ready","User membership request was pending; Admin approves membership from CMS; User membershipStatus = Approved; User hasSeenWelcomeModal = false","Admin approves user membership in CMS","Step completes as expected","User opens RoaminRabbit Android app","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe modal display","Welcome Modal displays with:
+- 'Welcome to the Club' message
+- Profile picture upload section (optional)
+- Gray silhouette avatar placeholder (tappable)
+- 'Explore' button
+- 'Invite Friends' button
+hasSeenWelcomeModal flag set to true","","","social-club, welcome-modal, membership-approval,android","Membership Approval Welcome"
+"Verify Welcome Modal displays after membership approval - IOS","Validate welcome modal displays after membership approval","functional_ios","high","ready","User membership request was pending; Admin approves membership from CMS; User membershipStatus = Approved; User hasSeenWelcomeModal = false","Admin approves user membership in CMS","Step completes as expected","User opens RoaminRabbit iOS app","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe modal display","Welcome Modal displays with:
+- 'Welcome to the Club' message
+- Profile picture upload section (optional)
+- Gray silhouette avatar placeholder (tappable)
+- 'Explore' button
+- 'Invite Friends' button
+hasSeenWelcomeModal flag set to true","","","social-club, welcome-modal, membership-approval,ios","Membership Approval Welcome"
+"Verify Welcome Modal not shown again after first view - ANDROID","Validate welcome modal not shown again after first view","functional_android","high","ready","User membershipStatus = Approved; User hasSeenWelcomeModal = true","Open RoaminRabbit Android app","Step completes as expected","Navigate to Social Club section","Step completes as expected","Check for Welcome Modal","Welcome Modal does NOT display
+User directly sees Social Club Home screen","","","","","social-club, welcome-modal, state-management,android","Membership Approval Welcome"
+"Verify Welcome Modal not shown again after first view - IOS","Validate welcome modal not shown again after first view","functional_ios","high","ready","User membershipStatus = Approved; User hasSeenWelcomeModal = true","Open RoaminRabbit iOS app","Step completes as expected","Navigate to Social Club section","Step completes as expected","Check for Welcome Modal","Welcome Modal does NOT display
+User directly sees Social Club Home screen","","","","","social-club, welcome-modal, state-management,ios","Membership Approval Welcome"
+"Upload profile picture from Welcome Modal - ANDROID","Validate upload profile picture from welcome modal","functional_android","medium","ready","User sees Welcome Modal after approval; User has valid image file (JPEG/PNG, <5MB)","Tap on profile picture placeholder","Step completes as expected","Select 'Camera' or 'Gallery' from native image picker","Step completes as expected","Choose image file (1.2MB JPEG)","Step completes as expected","Confirm image selection","Step completes as expected","Observe upload process","Profile picture upload successful:
+- Native image picker opens
+- Image selected and cropped to square
+- Image uploads successfully
+- Profile placeholder replaced with uploaded image
+- User can proceed with modal buttons","social-club, profile-picture, image-upload,android","Membership Approval Welcome"
+"Upload profile picture from Welcome Modal - IOS","Validate upload profile picture from welcome modal","functional_ios","medium","ready","User sees Welcome Modal after approval; User has valid image file (JPEG/PNG, <5MB)","Tap on profile picture placeholder","Step completes as expected","Select 'Camera' or 'Gallery' from native image picker","Step completes as expected","Choose image file (1.2MB JPEG)","Step completes as expected","Confirm image selection","Step completes as expected","Observe upload process","Profile picture upload successful:
+- Native image picker opens
+- Image selected and cropped to square
+- Image uploads successfully
+- Profile placeholder replaced with uploaded image
+- User can proceed with modal buttons","social-club, profile-picture, image-upload,ios","Membership Approval Welcome"
+"Verify profile picture upload validation for oversized file - ANDROID","Validate profile picture upload validation for oversized file","functional_android","medium","ready","User sees Welcome Modal; User has image file >5MB","Tap on profile picture placeholder","Step completes as expected","Select image from gallery","Step completes as expected","Choose image file (6MB JPEG)","Step completes as expected","Attempt to upload","Upload validation error:
+- Error message displays: 'Upload failed, try again.'
+- File size validation triggers
+- User can retry with different image
+- Profile placeholder remains unchanged","","","social-club, profile-picture, validation, negative,android","Membership Approval Welcome"
+"Verify profile picture upload validation for oversized file - IOS","Validate profile picture upload validation for oversized file","functional_ios","medium","ready","User sees Welcome Modal; User has image file >5MB","Tap on profile picture placeholder","Step completes as expected","Select image from gallery","Step completes as expected","Choose image file (6MB JPEG)","Step completes as expected","Attempt to upload","Upload validation error:
+- Error message displays: 'Upload failed, try again.'
+- File size validation triggers
+- User can retry with different image
+- Profile placeholder remains unchanged","","","social-club, profile-picture, validation, negative,ios","Membership Approval Welcome"
+"Navigate to Social Club Home via Explore button - ANDROID","Validate navigate to social club home via explore button","functional_android","high","ready","User sees Welcome Modal after approval","View Welcome Modal","Step completes as expected","Tap 'Explore' button","Step completes as expected","Observe navigation","User navigated to:
+- Featured Events screen OR Social Club Home
+- Modal closes
+- User can view events and member features","","","","","social-club, navigation, welcome-modal,android","Membership Approval Welcome"
+"Navigate to Social Club Home via Explore button - IOS","Validate navigate to social club home via explore button","functional_ios","high","ready","User sees Welcome Modal after approval","View Welcome Modal","Step completes as expected","Tap 'Explore' button","Step completes as expected","Observe navigation","User navigated to:
+- Featured Events screen OR Social Club Home
+- Modal closes
+- User can view events and member features","","","","","social-club, navigation, welcome-modal,ios","Membership Approval Welcome"
+"Share Social Club invite via Invite Friends button - ANDROID","Validate share social club invite via invite friends button","functional_android","medium","ready","User sees Welcome Modal after approval","View Welcome Modal","Step completes as expected","Tap 'Invite Friends' button","Step completes as expected","Observe share options","Native OS share sheet opens with:
+- Share message: 'Join me in the RoaminRabbit Social Club!'
+- Image attached
+- Share options: WhatsApp, Messages, Instagram, etc.
+- User can select platform and send invitation","","","","","social-club, sharing, invite-friends,android","Membership Approval Welcome"
+"Share Social Club invite via Invite Friends button - IOS","Validate share social club invite via invite friends button","functional_ios","medium","ready","User sees Welcome Modal after approval","View Welcome Modal","Step completes as expected","Tap 'Invite Friends' button","Step completes as expected","Observe share options","Native OS share sheet opens with:
+- Share message: 'Join me in the RoaminRabbit Social Club!'
+- Image attached
+- Share options: WhatsApp, Messages, Instagram, etc.
+- User can select platform and send invitation","","","","","social-club, sharing, invite-friends,ios","Membership Approval Welcome"
+"Verify pending user sees correct state on Social Club page - ANDROID","Validate pending user sees correct state on social club page","functional_android","high","ready","User membershipStatus = Pending; User hasSeenWelcomeModal = any value","User with pending membership opens app","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe displayed content","Welcome Modal does NOT display
+User redirected to introduction page with:
+- 'Your Request is Pending' banner
+- No access to member-only features
+- No Welcome Modal shown","","","","","social-club, pending-state, access-control,android","Membership Approval Welcome"
+"Verify pending user sees correct state on Social Club page - IOS","Validate pending user sees correct state on social club page","functional_ios","high","ready","User membershipStatus = Pending; User hasSeenWelcomeModal = any value","User with pending membership opens app","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe displayed content","Welcome Modal does NOT display
+User redirected to introduction page with:
+- 'Your Request is Pending' banner
+- No access to member-only features
+- No Welcome Modal shown","","","","","social-club, pending-state, access-control,ios","Membership Approval Welcome"
+"Verify Social Club Home displays for approved members - ANDROID","Validate social club home displays for approved members","functional_android","high","ready","User membershipStatus = Approved; User has seen Welcome Modal (hasSeenWelcomeModal = true)","Open RoaminRabbit Android app","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe home screen content","Social Club Home displays with:
+- Member Banner Card showing: 'Member Since' tag with year, circular profile photo (editable via pencil icon), member name, 'View My Tickets' button
+- Featured Events carousel (horizontal scroll)
+- Events sorted by earliest event date
+- Events hidden 1 day before event date","","","","","social-club, home-screen, member-view,android","Social Club Home"
+"Verify Social Club Home displays for approved members - IOS","Validate social club home displays for approved members","functional_ios","high","ready","User membershipStatus = Approved; User has seen Welcome Modal (hasSeenWelcomeModal = true)","Open RoaminRabbit iOS app","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe home screen content","Social Club Home displays with:
+- Member Banner Card showing: 'Member Since' tag with year, circular profile photo (editable via pencil icon), member name, 'View My Tickets' button
+- Featured Events carousel (horizontal scroll)
+- Events sorted by earliest event date
+- Events hidden 1 day before event date","","","","","social-club, home-screen, member-view,ios","Social Club Home"
+"Verify Member Since tag displays correct year - ANDROID","Validate member since tag displays correct year","functional_android","medium","ready","User approved as member on January 15, 2024; User memberSinceYear = 2024 (from backend)","Navigate to Social Club Home","Step completes as expected","Check Member Banner Card","Step completes as expected","Verify 'Member Since' tag value","'Member Since' tag displays: '2024'
+Year pulled correctly from memberSinceYear field in backend","","","","","social-club, member-data, display-validation,android","Social Club Home"
+"Verify Member Since tag displays correct year - IOS","Validate member since tag displays correct year","functional_ios","medium","ready","User approved as member on January 15, 2024; User memberSinceYear = 2024 (from backend)","Navigate to Social Club Home","Step completes as expected","Check Member Banner Card","Step completes as expected","Verify 'Member Since' tag value","'Member Since' tag displays: '2024'
+Year pulled correctly from memberSinceYear field in backend","","","","","social-club, member-data, display-validation,ios","Social Club Home"
+"Edit profile photo from Member Banner Card - ANDROID","Validate edit profile photo from member banner card","functional_android","medium","ready","User is on Social Club Home; User has existing profile photo","View Member Banner Card","Step completes as expected","Tap pencil icon on profile photo","Step completes as expected","Select 'Gallery' from image picker","Step completes as expected","Choose new image (2MB JPEG)","Step completes as expected","Confirm selection","Profile photo update successful:
+- Native gallery/camera picker opens
+- New image selected and uploaded
+- Profile photo updated in Member Banner Card
+- Updated photo reflects across all app sections","social-club, profile-photo, edit-profile,android","Social Club Home"
+"Edit profile photo from Member Banner Card - IOS","Validate edit profile photo from member banner card","functional_ios","medium","ready","User is on Social Club Home; User has existing profile photo","View Member Banner Card","Step completes as expected","Tap pencil icon on profile photo","Step completes as expected","Select 'Gallery' from image picker","Step completes as expected","Choose new image (2MB JPEG)","Step completes as expected","Confirm selection","Profile photo update successful:
+- Native gallery/camera picker opens
+- New image selected and uploaded
+- Profile photo updated in Member Banner Card
+- Updated photo reflects across all app sections","social-club, profile-photo, edit-profile,ios","Social Club Home"
+"Navigate to My Tickets screen from Member Banner - ANDROID","Validate navigate to my tickets screen from member banner","functional_android","high","ready","User is on Social Club Home; User has registered for at least 1 event","View Member Banner Card","Step completes as expected","Tap 'View My Tickets' button","Step completes as expected","Observe navigation","User navigated to Tickets screen showing:
+- Upcoming event tickets
+- Past event tickets
+- Ticket details for each registered event","","","","","social-club, navigation, my-tickets,android","Social Club Home"
+"Navigate to My Tickets screen from Member Banner - IOS","Validate navigate to my tickets screen from member banner","functional_ios","high","ready","User is on Social Club Home; User has registered for at least 1 event","View Member Banner Card","Step completes as expected","Tap 'View My Tickets' button","Step completes as expected","Observe navigation","User navigated to Tickets screen showing:
+- Upcoming event tickets
+- Past event tickets
+- Ticket details for each registered event","","","","","social-club, navigation, my-tickets,ios","Social Club Home"
+"Verify Featured Events carousel displays correctly - ANDROID","Validate featured events carousel displays correctly","functional_android","high","ready","Multiple events exist in Event Management CMS; User is on Social Club Home; Events are published and not hidden","View Featured Events section","Step completes as expected","Observe event cards in carousel","Step completes as expected","Swipe left to scroll through events","Step completes as expected","Check event sorting order","Featured Events carousel displays:
+- Horizontal scrollable list of event cards
+- Each card shows event date and location
+- Events sorted by earliest event date (ascending)
+- Events hidden starting 1 day before event date
+- Tapping event card opens Event Details page","","","social-club, events-carousel, ui-validation,android","Social Club Home"
+"Verify Featured Events carousel displays correctly - IOS","Validate featured events carousel displays correctly","functional_ios","high","ready","Multiple events exist in Event Management CMS; User is on Social Club Home; Events are published and not hidden","View Featured Events section","Step completes as expected","Observe event cards in carousel","Step completes as expected","Swipe left to scroll through events","Step completes as expected","Check event sorting order","Featured Events carousel displays:
+- Horizontal scrollable list of event cards
+- Each card shows event date and location
+- Events sorted by earliest event date (ascending)
+- Events hidden starting 1 day before event date
+- Tapping event card opens Event Details page","","","social-club, events-carousel, ui-validation,ios","Social Club Home"
+"Verify events hidden 1 day before event date - ANDROID","Validate events hidden 1 day before event date","functional_android","high","ready","Event scheduled for December 25, 2024; Current date is December 24, 2024 (1 day before event); User is on Social Club Home","Navigate to Social Club Home on December 24, 2024","Step completes as expected","View Featured Events carousel","Step completes as expected","Search for event scheduled on December 25, 2024","Event dated December 25, 2024 is NOT visible in carousel
+Event hidden from frontend to prevent additional registrations
+Other future events still visible","","","","","social-club, event-hiding, business-logic,android","Social Club Home"
+"Verify events hidden 1 day before event date - IOS","Validate events hidden 1 day before event date","functional_ios","high","ready","Event scheduled for December 25, 2024; Current date is December 24, 2024 (1 day before event); User is on Social Club Home","Navigate to Social Club Home on December 24, 2024","Step completes as expected","View Featured Events carousel","Step completes as expected","Search for event scheduled on December 25, 2024","Event dated December 25, 2024 is NOT visible in carousel
+Event hidden from frontend to prevent additional registrations
+Other future events still visible","","","","","social-club, event-hiding, business-logic,ios","Social Club Home"
+"Verify No Events Available state displays correctly - ANDROID","Validate no events available state displays correctly","functional_android","medium","ready","No published events in Event Management CMS; User is on Social Club Home","Navigate to Social Club Home","Step completes as expected","View Featured Events section","Step completes as expected","Observe empty state","No Events Available state displays:
+- Stylized empty state box shown
+- Placeholder is not clickable
+- No interaction possible
+- Clear message indicating no events currently available","","","","","social-club, empty-state, ui-validation,android","Social Club Home"
+"Verify No Events Available state displays correctly - IOS","Validate no events available state displays correctly","functional_ios","medium","ready","No published events in Event Management CMS; User is on Social Club Home","Navigate to Social Club Home","Step completes as expected","View Featured Events section","Step completes as expected","Observe empty state","No Events Available state displays:
+- Stylized empty state box shown
+- Placeholder is not clickable
+- No interaction possible
+- Clear message indicating no events currently available","","","","","social-club, empty-state, ui-validation,ios","Social Club Home"
+"Verify Event Details page displays complete event information - ANDROID","Validate event details page displays complete event information","functional_android","high","ready","Event exists in CMS with complete data:; - Event Name: 'Jakarta Networking Night'; - Date: 'Saturday, 28 December 2024'; - Location: 'Jakarta, Indonesia'; - Time: '18:00 - 21:00'; - Max capacity: 50; - Current registrations: 35; - Multiple event images; User is logged in as approved member","Navigate to Social Club Home","Step completes as expected","Tap on event card in carousel","Step completes as expected","Observe Event Details page content","Event Details page displays:
+- Event Hero Carousel with swipe-enabled images and indicators
+- Event Title: 'Jakarta Networking Night'
+- Event Metadata Badges: 'Saturday, 28 December 2024', 'Jakarta, Indonesia', '18:00 - 21:00'
+- Registration Status: '35 Registrations', profile circles of 6 most recent registrants
+- 'Spots Left' badge NOT shown (more than 10 spots available)
+- About Section with event description (truncated with 'View more information' expand)
+- 'Register' button visible at bottom","","","","","event-details, ui-validation, event-info,android","Event Details & Registration"
+"Verify Event Details page displays complete event information - IOS","Validate event details page displays complete event information","functional_ios","high","ready","Event exists in CMS with complete data:; - Event Name: 'Jakarta Networking Night'; - Date: 'Saturday, 28 December 2024'; - Location: 'Jakarta, Indonesia'; - Time: '18:00 - 21:00'; - Max capacity: 50; - Current registrations: 35; - Multiple event images; User is logged in as approved member","Navigate to Social Club Home","Step completes as expected","Tap on event card in carousel","Step completes as expected","Observe Event Details page content","Event Details page displays:
+- Event Hero Carousel with swipe-enabled images and indicators
+- Event Title: 'Jakarta Networking Night'
+- Event Metadata Badges: 'Saturday, 28 December 2024', 'Jakarta, Indonesia', '18:00 - 21:00'
+- Registration Status: '35 Registrations', profile circles of 6 most recent registrants
+- 'Spots Left' badge NOT shown (more than 10 spots available)
+- About Section with event description (truncated with 'View more information' expand)
+- 'Register' button visible at bottom","","","","","event-details, ui-validation, event-info,ios","Event Details & Registration"
+"Verify 'Spots Left' badge displays when 10 or fewer spots remain - ANDROID","Validate 'spots left' badge displays when 10 or fewer spots remain","functional_android","high","ready","Event max capacity: 50; Current registrations: 42; Spots remaining: 8; User views Event Details","Navigate to Event Details for nearly-full event","Step completes as expected","Check Registration Status section","Step completes as expected","Verify 'Spots Left' badge","'Spots Left' badge displays showing: '8 Spots Left'
+Badge shown because remaining spots ≤ 10
+Badge counts down dynamically as users register","","","","","event-details, capacity-tracking, spots-badge,android","Event Details & Registration"
+"Verify 'Spots Left' badge displays when 10 or fewer spots remain - IOS","Validate 'spots left' badge displays when 10 or fewer spots remain","functional_ios","high","ready","Event max capacity: 50; Current registrations: 42; Spots remaining: 8; User views Event Details","Navigate to Event Details for nearly-full event","Step completes as expected","Check Registration Status section","Step completes as expected","Verify 'Spots Left' badge","'Spots Left' badge displays showing: '8 Spots Left'
+Badge shown because remaining spots ≤ 10
+Badge counts down dynamically as users register","","","","","event-details, capacity-tracking, spots-badge,ios","Event Details & Registration"
+"Expand full event description from truncated preview - ANDROID","Validate expand full event description from truncated preview","functional_android","medium","ready","Event has long description (>180 characters); Description is truncated in preview; User views Event Details page","View Event Details page","Step completes as expected","Locate About Section with truncated description","Step completes as expected","Tap 'View more information' link","Step completes as expected","Observe description expansion","Full event description expands:
+- Complete description text displayed
+- No truncation
+- User can read entire description
+- May include collapse option to return to preview","","","event-details, description-expansion, ui-behavior,android","Event Details & Registration"
+"Expand full event description from truncated preview - IOS","Validate expand full event description from truncated preview","functional_ios","medium","ready","Event has long description (>180 characters); Description is truncated in preview; User views Event Details page","View Event Details page","Step completes as expected","Locate About Section with truncated description","Step completes as expected","Tap 'View more information' link","Step completes as expected","Observe description expansion","Full event description expands:
+- Complete description text displayed
+- No truncation
+- User can read entire description
+- May include collapse option to return to preview","","","event-details, description-expansion, ui-behavior,ios","Event Details & Registration"
+"Register button only visible for logged-in members - ANDROID","Validate register button only visible for logged-in members","functional_android","high","ready","User membershipStatus = Approved; Event has available spots; User views Event Details","Log in as approved member","Step completes as expected","Navigate to Event Details page","Step completes as expected","Check for Register button visibility","'Register' button is visible at bottom of Event Details page
+Button is enabled and tappable
+Non-members or pending members do not see this button","","","","","event-registration, access-control, member-validation,android","Event Details & Registration"
+"Register button only visible for logged-in members - IOS","Validate register button only visible for logged-in members","functional_ios","high","ready","User membershipStatus = Approved; Event has available spots; User views Event Details","Log in as approved member","Step completes as expected","Navigate to Event Details page","Step completes as expected","Check for Register button visibility","'Register' button is visible at bottom of Event Details page
+Button is enabled and tappable
+Non-members or pending members do not see this button","","","","","event-registration, access-control, member-validation,ios","Event Details & Registration"
+"Open registration confirmation modal when Register tapped - ANDROID","Validate open registration confirmation modal when register tapped","functional_android","high","ready","User is approved member; User views Event Details; Event has available spots","View Event Details page","Step completes as expected","Tap 'Register' button","Step completes as expected","Observe modal behavior","Confirmation modal displays with:
+- Background blur effect
+- Swipe up interaction allowed
+- Auto-filled fields: Full Name, WhatsApp Number (from member profile)
+- Form validation highlighting invalid fields in red if incomplete
+- 'Swipe to Secure Spot' slider at bottom
+- Close button to exit modal","","","","","event-registration, confirmation-modal, ui-validation,android","Event Details & Registration"
+"Open registration confirmation modal when Register tapped - IOS","Validate open registration confirmation modal when register tapped","functional_ios","high","ready","User is approved member; User views Event Details; Event has available spots","View Event Details page","Step completes as expected","Tap 'Register' button","Step completes as expected","Observe modal behavior","Confirmation modal displays with:
+- Background blur effect
+- Swipe up interaction allowed
+- Auto-filled fields: Full Name, WhatsApp Number (from member profile)
+- Form validation highlighting invalid fields in red if incomplete
+- 'Swipe to Secure Spot' slider at bottom
+- Close button to exit modal","","","","","event-registration, confirmation-modal, ui-validation,ios","Event Details & Registration"
+"Complete event registration successfully via swipe slider - ANDROID","Validate complete event registration successfully via swipe slider","functional_android","high","ready","User has opened registration confirmation modal; Full Name: 'John Doe' (auto-filled); WhatsApp: '+6281234567890' (auto-filled); All fields valid","View confirmation modal with auto-filled data","Step completes as expected","Verify Full Name and WhatsApp Number","Step completes as expected","Swipe 'Swipe to Secure Spot' slider from left to right","Step completes as expected","Wait for registration API response","Registration successful:
+- Sliding action triggers registration API
+- Loading indicator shown during API call
+- Success modal/ticket displays upon completion
+- User receives unique QR code and order code
+- Registration count increases by 1 on Event Details","","","event-registration, swipe-slider, positive-flow,android","Event Details & Registration"
+"Complete event registration successfully via swipe slider - IOS","Validate complete event registration successfully via swipe slider","functional_ios","high","ready","User has opened registration confirmation modal; Full Name: 'John Doe' (auto-filled); WhatsApp: '+6281234567890' (auto-filled); All fields valid","View confirmation modal with auto-filled data","Step completes as expected","Verify Full Name and WhatsApp Number","Step completes as expected","Swipe 'Swipe to Secure Spot' slider from left to right","Step completes as expected","Wait for registration API response","Registration successful:
+- Sliding action triggers registration API
+- Loading indicator shown during API call
+- Success modal/ticket displays upon completion
+- User receives unique QR code and order code
+- Registration count increases by 1 on Event Details","","","event-registration, swipe-slider, positive-flow,ios","Event Details & Registration"
+"Verify swipe slider disabled with incomplete form - ANDROID","Validate swipe slider disabled with incomplete form","functional_android","high","ready","User has opened registration confirmation modal; Full Name field is empty or invalid","Open confirmation modal","Step completes as expected","Clear Full Name field (leave empty)","Step completes as expected","Attempt to swipe 'Swipe to Secure Spot' slider","Step completes as expected","Observe slider behavior","Swipe slider is disabled:
+- Slider does not respond to swipe gesture
+- Invalid fields highlighted in red
+- Registration cannot proceed until form is complete
+- Clear validation message displayed","","","event-registration, form-validation, negative,android","Event Details & Registration"
+"Verify swipe slider disabled with incomplete form - IOS","Validate swipe slider disabled with incomplete form","functional_ios","high","ready","User has opened registration confirmation modal; Full Name field is empty or invalid","Open confirmation modal","Step completes as expected","Clear Full Name field (leave empty)","Step completes as expected","Attempt to swipe 'Swipe to Secure Spot' slider","Step completes as expected","Observe slider behavior","Swipe slider is disabled:
+- Slider does not respond to swipe gesture
+- Invalid fields highlighted in red
+- Registration cannot proceed until form is complete
+- Clear validation message displayed","","","event-registration, form-validation, negative,ios","Event Details & Registration"
+"Display registration success ticket modal with QR code - ANDROID","Validate display registration success ticket modal with qr code","functional_android","high","ready","User has completed registration swipe slider; Registration API returns success; Order code generated: '12345'","Complete event registration","Step completes as expected","Wait for API response","Step completes as expected","Observe success ticket modal","Ticket modal displays:
+- Confirmation message
+- Event information summary (pulled from CMS)
+- Unique QR code (generated per order code from backend)
+- Order Code: '12345' (participant reference code)
+- 'View Details' link to return to Event Details page
+- 'Back' button to close modal and return to Social Club Home","","","","","event-registration, ticket-modal, qr-code,android","Event Details & Registration"
+"Display registration success ticket modal with QR code - IOS","Validate display registration success ticket modal with qr code","functional_ios","high","ready","User has completed registration swipe slider; Registration API returns success; Order code generated: '12345'","Complete event registration","Step completes as expected","Wait for API response","Step completes as expected","Observe success ticket modal","Ticket modal displays:
+- Confirmation message
+- Event information summary (pulled from CMS)
+- Unique QR code (generated per order code from backend)
+- Order Code: '12345' (participant reference code)
+- 'View Details' link to return to Event Details page
+- 'Back' button to close modal and return to Social Club Home","","","","","event-registration, ticket-modal, qr-code,ios","Event Details & Registration"
+"Navigate back to Event Details from ticket modal - ANDROID","Validate navigate back to event details from ticket modal","functional_android","medium","ready","User sees registration success ticket modal","View ticket modal after successful registration","Step completes as expected","Tap 'View Details' link","Step completes as expected","Observe navigation","User returns to Event Details page via deep-link
+Event Details page shows updated registration count
+User can view complete event information","","","","","event-registration, navigation, deep-link,android","Event Details & Registration"
+"Navigate back to Event Details from ticket modal - IOS","Validate navigate back to event details from ticket modal","functional_ios","medium","ready","User sees registration success ticket modal","View ticket modal after successful registration","Step completes as expected","Tap 'View Details' link","Step completes as expected","Observe navigation","User returns to Event Details page via deep-link
+Event Details page shows updated registration count
+User can view complete event information","","","","","event-registration, navigation, deep-link,ios","Event Details & Registration"
+"Close ticket modal and return to Social Club Home - ANDROID","Validate close ticket modal and return to social club home","functional_android","medium","ready","User sees registration success ticket modal","View ticket modal after successful registration","Step completes as expected","Tap 'Back' button","Step completes as expected","Observe navigation","Modal closes
+User returns to Social Club Home screen
+User can view other events and member features","","","","","event-registration, navigation, close-modal,android","Event Details & Registration"
+"Close ticket modal and return to Social Club Home - IOS","Validate close ticket modal and return to social club home","functional_ios","medium","ready","User sees registration success ticket modal","View ticket modal after successful registration","Step completes as expected","Tap 'Back' button","Step completes as expected","Observe navigation","Modal closes
+User returns to Social Club Home screen
+User can view other events and member features","","","","","event-registration, navigation, close-modal,ios","Event Details & Registration"
+"Display revoked membership banner on Social Club landing - ANDROID","Validate display revoked membership banner on social club landing","functional_android","high","ready","User was previously approved member; Admin revoked membership from CMS; membership_status = revoked; revocation_reason = 'Violation of community guidelines'","User opens RoaminRabbit Android app after revocation","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe landing page","Revoked membership banner displays:
+- Persistent warning banner at top of landing page
+- Banner only appears when membership_status = revoked
+- Tapping banner opens 'Sorry for the Inconvenience' modal
+- Banner remains visible until membership restored","","","","","membership-revocation, banner-display, access-control,android","Membership Revocation"
+"Display revoked membership banner on Social Club landing - IOS","Validate display revoked membership banner on social club landing","functional_ios","high","ready","User was previously approved member; Admin revoked membership from CMS; membership_status = revoked; revocation_reason = 'Violation of community guidelines'","User opens RoaminRabbit iOS app after revocation","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe landing page","Revoked membership banner displays:
+- Persistent warning banner at top of landing page
+- Banner only appears when membership_status = revoked
+- Tapping banner opens 'Sorry for the Inconvenience' modal
+- Banner remains visible until membership restored","","","","","membership-revocation, banner-display, access-control,ios","Membership Revocation"
+"Display revocation reason in Sorry for Inconvenience modal - ANDROID","Validate display revocation reason in sorry for inconvenience modal","functional_android","high","ready","User membership_status = revoked; revocation_reason = 'Violation of community guidelines'; User taps revoked membership banner","Tap on revoked membership banner","Step completes as expected","Observe modal content","Step completes as expected","Read revocation reason","Sorry for Inconvenience modal displays:
+- Reason displayed in grey reason box: 'Violation of community guidelines'
+- Reason text sourced from backend revocation_reason field
+- Modal blocks interaction with page until dismissed
+- 'Contact Us' CTA button available
+- User cannot proceed without dismissing modal","","","","","membership-revocation, modal-display, revocation-reason,android","Membership Revocation"
+"Display revocation reason in Sorry for Inconvenience modal - IOS","Validate display revocation reason in sorry for inconvenience modal","functional_ios","high","ready","User membership_status = revoked; revocation_reason = 'Violation of community guidelines'; User taps revoked membership banner","Tap on revoked membership banner","Step completes as expected","Observe modal content","Step completes as expected","Read revocation reason","Sorry for Inconvenience modal displays:
+- Reason displayed in grey reason box: 'Violation of community guidelines'
+- Reason text sourced from backend revocation_reason field
+- Modal blocks interaction with page until dismissed
+- 'Contact Us' CTA button available
+- User cannot proceed without dismissing modal","","","","","membership-revocation, modal-display, revocation-reason,ios","Membership Revocation"
+"Contact support via Contact Us button in revocation modal - ANDROID","Validate contact support via contact us button in revocation modal","functional_android","medium","ready","User sees revocation modal; FreshChat is configured in app","View Sorry for Inconvenience modal","Step completes as expected","Tap 'Contact Us' CTA button","Step completes as expected","Observe action","FreshChat support window launches:
+- User can communicate with support team
+- User can explain situation or appeal revocation
+- Support conversation initiated
+- User can return to app after contacting support","","","","","membership-revocation, support-contact, freshchat,android","Membership Revocation"
+"Contact support via Contact Us button in revocation modal - IOS","Validate contact support via contact us button in revocation modal","functional_ios","medium","ready","User sees revocation modal; FreshChat is configured in app","View Sorry for Inconvenience modal","Step completes as expected","Tap 'Contact Us' CTA button","Step completes as expected","Observe action","FreshChat support window launches:
+- User can communicate with support team
+- User can explain situation or appeal revocation
+- Support conversation initiated
+- User can return to app after contacting support","","","","","membership-revocation, support-contact, freshchat,ios","Membership Revocation"
+"Verify revoked members cannot access member-only features - ANDROID","Validate revoked members cannot access member-only features","functional_android","high","ready","User membership_status = revoked; User attempts to access member features","User with revoked membership opens app","Step completes as expected","Attempt to access Social Club Home","Step completes as expected","Attempt to access My Tickets","Step completes as expected","Attempt to register for events","Step completes as expected","Observe access restrictions","Limited access enforced:
+- Member card is hidden
+- Tickets screen not accessible
+- Events registration not available
+- Club home pages hidden
+- All member-only features blocked
+- User sees only public landing page with revocation banner","membership-revocation, access-control, feature-restriction,android","Membership Revocation"
+"Verify revoked members cannot access member-only features - IOS","Validate revoked members cannot access member-only features","functional_ios","high","ready","User membership_status = revoked; User attempts to access member features","User with revoked membership opens app","Step completes as expected","Attempt to access Social Club Home","Step completes as expected","Attempt to access My Tickets","Step completes as expected","Attempt to register for events","Step completes as expected","Observe access restrictions","Limited access enforced:
+- Member card is hidden
+- Tickets screen not accessible
+- Events registration not available
+- Club home pages hidden
+- All member-only features blocked
+- User sees only public landing page with revocation banner","membership-revocation, access-control, feature-restriction,ios","Membership Revocation"
+"Redirect to revocation modal on deep-link access attempt - ANDROID","Validate redirect to revocation modal on deep-link access attempt","functional_android","high","ready","User membership_status = revoked; User has deep-link to member-only page (e.g., My Tickets, Event Details)","User with revoked membership clicks deep-link","Step completes as expected","App attempts to navigate to member-only page","Step completes as expected","Observe redirection behavior","Access blocked:
+- Deep-link navigation intercepted
+- User redirected to revocation modal
+- Sorry for Inconvenience modal displayed
+- User cannot access linked member-only content
+- Must dismiss modal to continue","","","","","membership-revocation, deep-link, access-control,android","Membership Revocation"
+"Redirect to revocation modal on deep-link access attempt - IOS","Validate redirect to revocation modal on deep-link access attempt","functional_ios","high","ready","User membership_status = revoked; User has deep-link to member-only page (e.g., My Tickets, Event Details)","User with revoked membership clicks deep-link","Step completes as expected","App attempts to navigate to member-only page","Step completes as expected","Observe redirection behavior","Access blocked:
+- Deep-link navigation intercepted
+- User redirected to revocation modal
+- Sorry for Inconvenience modal displayed
+- User cannot access linked member-only content
+- Must dismiss modal to continue","","","","","membership-revocation, deep-link, access-control,ios","Membership Revocation"
+"Restore member access after admin unrevokes membership - ANDROID","Validate restore member access after admin unrevokes membership","functional_android","high","ready","User membership_status = revoked; Admin changes status to 'active' in CMS; User launches app after restoration","Admin unrevokes membership in CMS","Step completes as expected","Backend changes membership_status to 'active'","Step completes as expected","User closes and reopens app (or refreshes)","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe access restoration","Full access restored:
+- Revocation banner disappears
+- User regains access to all member-only features
+- Social Club Home accessible
+- My Tickets accessible
+- Event registration available
+- Member card displays normally
+- User treated as approved member","membership-revocation, restoration, access-recovery,android","Membership Revocation"
+"Restore member access after admin unrevokes membership - IOS","Validate restore member access after admin unrevokes membership","functional_ios","high","ready","User membership_status = revoked; Admin changes status to 'active' in CMS; User launches app after restoration","Admin unrevokes membership in CMS","Step completes as expected","Backend changes membership_status to 'active'","Step completes as expected","User closes and reopens app (or refreshes)","Step completes as expected","Navigate to Social Club section","Step completes as expected","Observe access restoration","Full access restored:
+- Revocation banner disappears
+- User regains access to all member-only features
+- Social Club Home accessible
+- My Tickets accessible
+- Event registration available
+- Member card displays normally
+- User treated as approved member","membership-revocation, restoration, access-recovery,ios","Membership Revocation"
+"Display FULL CAPACITY indicator when event reaches max capacity - ANDROID","Validate display full capacity indicator when event reaches max capacity","functional_android","high","ready","Event max capacity: 50; Current registrations: 50; event.isFull = true; User views Event Details","Navigate to Event Details for full event","Step completes as expected","Check Registration Status section","Step completes as expected","Check Register button state","Full capacity display:
+- Capacity shows 'FULL CAPACITY'
+- 'Register' button replaced with 'Join Waitlist' button
+- Registration count shows '50 Registrations'
+- User cannot register directly
+- Only waitlist option available","","","","","waitlist, full-capacity, event-capacity,android","Event Waitlisting"
+"Display FULL CAPACITY indicator when event reaches max capacity - IOS","Validate display full capacity indicator when event reaches max capacity","functional_ios","high","ready","Event max capacity: 50; Current registrations: 50; event.isFull = true; User views Event Details","Navigate to Event Details for full event","Step completes as expected","Check Registration Status section","Step completes as expected","Check Register button state","Full capacity display:
+- Capacity shows 'FULL CAPACITY'
+- 'Register' button replaced with 'Join Waitlist' button
+- Registration count shows '50 Registrations'
+- User cannot register directly
+- Only waitlist option available","","","","","waitlist, full-capacity, event-capacity,ios","Event Waitlisting"
+"Join waitlist when event is at full capacity - ANDROID","Validate join waitlist when event is at full capacity","functional_android","high","ready","Event is at full capacity (event.isFull = true); User is approved member; User views Event Details showing 'Join Waitlist' button","View Event Details for full event","Step completes as expected","Tap 'Join Waitlist' button","Step completes as expected","Observe modal opening","'Join Waitlist' button tapped successfully:
+- Button only displayed when event.isFull = true
+- Confirm Details modal opens
+- Same design as registration confirmation
+- Auto-filled name and WhatsApp number
+- Swipe slider shows 'Swipe to Join Waitlist'","","","","","waitlist, join-waitlist, event-full,android","Event Waitlisting"
+"Join waitlist when event is at full capacity - IOS","Validate join waitlist when event is at full capacity","functional_ios","high","ready","Event is at full capacity (event.isFull = true); User is approved member; User views Event Details showing 'Join Waitlist' button","View Event Details for full event","Step completes as expected","Tap 'Join Waitlist' button","Step completes as expected","Observe modal opening","'Join Waitlist' button tapped successfully:
+- Button only displayed when event.isFull = true
+- Confirm Details modal opens
+- Same design as registration confirmation
+- Auto-filled name and WhatsApp number
+- Swipe slider shows 'Swipe to Join Waitlist'","","","","","waitlist, join-waitlist, event-full,ios","Event Waitlisting"
+"Complete waitlist registration via swipe slider - ANDROID","Validate complete waitlist registration via swipe slider","functional_android","high","ready","User has opened waitlist confirmation modal; Name: 'Jane Doe' (auto-filled); WhatsApp: '+6281234567890' (auto-filled); All validation passed","View waitlist confirmation modal","Step completes as expected","Verify name and phone number","Step completes as expected","Swipe 'Swipe to Join Waitlist' slider from left to right","Step completes as expected","Wait for API response","Waitlist registration successful:
+- Sliding action triggers waitlist API
+- Loading indicator during processing
+- Success confirmation displays
+- User added to waitlist queue
+- Waitlist count increases","","","waitlist, waitlist-registration, swipe-slider,android","Event Waitlisting"
+"Complete waitlist registration via swipe slider - IOS","Validate complete waitlist registration via swipe slider","functional_ios","high","ready","User has opened waitlist confirmation modal; Name: 'Jane Doe' (auto-filled); WhatsApp: '+6281234567890' (auto-filled); All validation passed","View waitlist confirmation modal","Step completes as expected","Verify name and phone number","Step completes as expected","Swipe 'Swipe to Join Waitlist' slider from left to right","Step completes as expected","Wait for API response","Waitlist registration successful:
+- Sliding action triggers waitlist API
+- Loading indicator during processing
+- Success confirmation displays
+- User added to waitlist queue
+- Waitlist count increases","","","waitlist, waitlist-registration, swipe-slider,ios","Event Waitlisting"
+"Display waitlist success confirmation message - ANDROID","Validate display waitlist success confirmation message","functional_android","high","ready","User has completed waitlist swipe slider; Waitlist API returns success","Complete waitlist registration","Step completes as expected","Wait for API response","Step completes as expected","Observe success state","Waitlist success message displays:
+- Success message: 'You're on the waitlist!'
+- Confirmation that user is queued for the event
+- Information about next steps (if spots become available)
+- Option to return to Social Club Home","","","","","waitlist, success-message, confirmation,android","Event Waitlisting"
+"Display waitlist success confirmation message - IOS","Validate display waitlist success confirmation message","functional_ios","high","ready","User has completed waitlist swipe slider; Waitlist API returns success","Complete waitlist registration","Step completes as expected","Wait for API response","Step completes as expected","Observe success state","Waitlist success message displays:
+- Success message: 'You're on the waitlist!'
+- Confirmation that user is queued for the event
+- Information about next steps (if spots become available)
+- Option to return to Social Club Home","","","","","waitlist, success-message, confirmation,ios","Event Waitlisting"
+"Verify waitlist form validation requires name and phone - ANDROID","Validate waitlist form validation requires name and phone","functional_android","high","ready","User has opened waitlist confirmation modal","Open waitlist confirmation modal","Step completes as expected","Clear name field (leave empty)","Step completes as expected","Attempt to swipe 'Swipe to Join Waitlist' slider","Step completes as expected","Observe validation","Form validation prevents submission:
+- Swipe slider disabled with incomplete form
+- Name field validation required
+- WhatsApp field validation required
+- Invalid fields highlighted
+- Cannot proceed until form complete","","","waitlist, form-validation, negative,android","Event Waitlisting"
+"Verify waitlist form validation requires name and phone - IOS","Validate waitlist form validation requires name and phone","functional_ios","high","ready","User has opened waitlist confirmation modal","Open waitlist confirmation modal","Step completes as expected","Clear name field (leave empty)","Step completes as expected","Attempt to swipe 'Swipe to Join Waitlist' slider","Step completes as expected","Observe validation","Form validation prevents submission:
+- Swipe slider disabled with incomplete form
+- Name field validation required
+- WhatsApp field validation required
+- Invalid fields highlighted
+- Cannot proceed until form complete","","","waitlist, form-validation, negative,ios","Event Waitlisting"
+"Verify Members Table displays all membership records correctly","Validate members table displays all membership records correctly","functional_web","high","ready","Admin logged into Events Management CMS; Multiple membership records exist with different statuses; Navigate to Membership Management section","Access CMS Membership Management page","Step completes as expected","Observe Members Table display","Step completes as expected","Check table columns and data","Members Table displays correctly with columns:
+- No (auto-incremented entry number)
+- Account ID (user's system ID from profile)
+- Request Date (format: DD MMM YYYY • HH:MM)
+- Name (user's full name from account)
+- Number (WhatsApp number in E.164 or local format)
+- Actions (Approve/Revoke/Unrevoke/View buttons)
+Table sorted by most recent request by default","","","","","cms, membership-management, table-display","CMS - Membership Management"
+"Search members by name in real-time","Validate search members by name in real-time","functional_web","high","ready","Admin is on Membership Management page; Multiple member records exist including 'John Doe', 'Jane Smith', 'Bob Johnson'","Locate search bar in Membership Management","Step completes as expected","Type 'John' in search bar","Step completes as expected","Observe table filtering in real-time","Step completes as expected","Clear search and type 'smith' (lowercase)","Step completes as expected","Check case-insensitive search","Search functions correctly:
+- Real-time filtering across Name column
+- Search is case-insensitive
+- Typing 'John' shows 'John Doe' and 'Bob Johnson' (contains John)
+- Typing 'smith' shows 'Jane Smith'
+- Empty results show 'No results found' message","cms, search, real-time-filter","CMS - Membership Management"
+"Filter members by status - Requested (Pending)","Validate filter members by status - requested (pending)","functional_web","high","ready","Admin is on Membership Management page; Membership records exist with various statuses:; - 5 Pending; - 10 Approved; - 3 Revoked","View Members Table with 'All' filter active (default)","Step completes as expected","Click 'Requested' filter button","Step completes as expected","Observe table filtering","Step completes as expected","Check displayed records","Filter displays correctly:
+- Only members with membershipStatus = 'Pending' shown
+- Table shows 5 pending records
+- Records sorted by most recent request
+- Approve button visible for each pending member
+- Other status records hidden","","","cms, filter, pending-status","CMS - Membership Management"
+"Filter members by status - Approved","Validate filter members by status - approved","functional_web","high","ready","Admin is on Membership Management page; Membership records exist with various statuses","Click 'Approved' filter button","Step completes as expected","Observe table filtering","Step completes as expected","Check action buttons available","Approved filter displays:
+- Only members with membershipStatus = 'Approved' shown
+- Records sorted by approval timestamp
+- Orange 'Revoke' button visible for each approved member
+- Other status records hidden","","","","","cms, filter, approved-status","CMS - Membership Management"
+"Approve pending membership request successfully","Validate approve pending membership request successfully","functional_web","high","ready","Admin is on Membership Management page; Pending member exists:; - Name: 'John Doe'; - membershipStatus: 'Pending'; - Account ID: '12345'","Filter by 'Requested' status","Step completes as expected","Locate John Doe's record","Step completes as expected","Click green 'Approve' button","Step completes as expected","Confirm approval action","Step completes as expected","Observe status update","Approval successful:
+- membershipStatus updates from Pending → Approved instantly
+- Success notification/toast displayed
+- User gains access to member-only app features
+- 'Welcome to the Club' dialog triggered for user's next login
+- WhatsApp notification sent via backend service
+- Status log updated with approval entry
+- Record moves to 'Approved' filter section","cms, approve-membership, status-update","CMS - Membership Management"
+"Revoke approved membership with reason","Validate revoke approved membership with reason","functional_web","high","ready","Admin is on Membership Management page; Approved member exists:; - Name: 'Jane Smith'; - membershipStatus: 'Approved'; User has active event registrations","Filter by 'Approved' status","Step completes as expected","Locate Jane Smith's record","Step completes as expected","Click orange 'Revoke' button","Step completes as expected","Enter revocation reason: 'Violation of community guidelines'","Step completes as expected","Confirm revocation","Step completes as expected","cms, revoke-membership, revocation-reason","CMS - Membership Management"
+"Verify revocation requires non-empty reason","Validate revocation requires non-empty reason","functional_web","high","ready","Admin is on Membership Management page; Approved member selected for revocation","Click 'Revoke' button on approved member","Step completes as expected","Leave revocation reason field empty","Step completes as expected","Attempt to confirm revocation","Step completes as expected","Observe validation error","Validation error displayed:
+- Revocation reason field highlighted as required
+- Error message: 'Revocation reason is required'
+- Cannot proceed with revocation until reason provided
+- Admin must enter text before confirming","","","cms, validation, negative, revocation-reason","CMS - Membership Management"
+"Unrevoke membership to restore member access","Validate unrevoke membership to restore member access","functional_web","high","ready","Admin is on Membership Management page; Revoked member exists:; - Name: 'Jane Smith'; - membershipStatus: 'Revoked'; - revocation_reason: 'Violation of community guidelines'","Filter by 'Revoked' status","Step completes as expected","Locate Jane Smith's record","Step completes as expected","Click 'Unrevoke' button","Step completes as expected","Confirm restoration","Step completes as expected","Observe status update","Unrevoke successful:
+- membershipStatus updates from Revoked → Approved
+- Status Log entry appended: 'Membership Unrevoked'
+- User regains access to all member-only features on next login
+- Revocation banner disappears from user's app
+- User can register for new events
+- Previous event registrations remain deleted (not restored)
+- WhatsApp notification sent about restoration","cms, unrevoke-membership, restoration","CMS - Membership Management"
+"View complete member information and status logs","Validate view complete member information and status logs","functional_web","medium","ready","Admin is on Membership Management page; Member has activity history including approval, revocation, unrevoke","Locate member record in table","Step completes as expected","Click 'View' button","Step completes as expected","Observe detail modal/page","Step completes as expected","Check status logs","Member detail view displays:
+- Full member information (name, contact, dates)
+- Complete status log with timestamps
+- Activity history showing: request date, approval, revocation (with reason), unrevoke
+- All status changes with admin ID and timestamp
+- Current membership status clearly indicated","","","cms, view-member, status-logs","CMS - Membership Management"
+"Export membership records as CSV","Validate export membership records as csv","functional_web","medium","ready","Admin is on Membership Management page; Filter set to 'Approved' showing 10 approved members; Current date: 2024-12-19","Set filter to 'Approved'","Step completes as expected","Click 'Export' button","Step completes as expected","Confirm export action","Step completes as expected","Download file","Step completes as expected","Open CSV file","CSV export successful:
+- File downloaded with name: 'roaminrabbitsocialclub_members_20241219.csv'
+- CSV contains all visible approved member records (respects current filter)
+- Columns include: No, Account ID, Request Date, Name, Number, Status
+- Data formatted correctly for spreadsheet viewing
+- All 10 approved members present in export","cms, export-csv, data-export","CMS - Membership Management"
+"Create new event with all required fields and post successfully","Validate create new event with all required fields and post successfully","functional_web","high","ready","Admin logged into Events Management CMS; Navigate to Event Creation page; Valid event images available (1080x1350px, <5MB each)","Navigate to Event Creation form","Step completes as expected","Upload 3 event images (drag & drop or select)","Step completes as expected","Fill Event Name: 'Jakarta Networking Night'","Step completes as expected","Select Date: '2024-12-28' using date picker","Step completes as expected","Enter Time: '18:00 - 21:00'","Step completes as expected","cms, event-creation, publish-event","CMS - Event Creation"
+"Save event as draft without publishing","Validate save event as draft without publishing","functional_web","high","ready","Admin is on Event Creation page; Some fields filled, others incomplete","Fill Event Name: 'Bali Beach Meetup'","Step completes as expected","Select Date: '2025-01-15'","Step completes as expected","Leave Time, Region, Location empty","Step completes as expected","Upload 1 image","Step completes as expected","Click 'Save as Draft' button","Step completes as expected","cms, save-draft, partial-event","CMS - Event Creation"
+"Verify Post Event button blocked until all required fields complete","Validate post event button blocked until all required fields complete","functional_web","high","ready","Admin is on Event Creation page","Fill Event Name: 'Test Event'","Step completes as expected","Leave Date field empty","Step completes as expected","Fill other fields completely","Step completes as expected","Upload required images","Step completes as expected","Attempt to click 'Post Event' button","Step completes as expected","cms, validation, negative, required-fields","CMS - Event Creation"
+"Upload event images with drag and drop functionality","Validate upload event images with drag and drop functionality","functional_web","medium","ready","Admin is on Event Creation page; 3 valid image files ready (JPG/PNG, 1080x1350px, <5MB each)","Drag first image file to upload area","Step completes as expected","Drop image to upload","Step completes as expected","Repeat for second image","Step completes as expected","Repeat for third image","Step completes as expected","Observe upload results","Images uploaded successfully:
+- Drag & drop functionality works smoothly
+- All 3 images uploaded and displayed in preview
+- Each image shows thumbnail preview
+- Remove button available per image
+- Can upload up to 3 images total
+- Supported formats: JPG, PNG
+- Recommended dimension: 1080x1350px","cms, image-upload, drag-drop","CMS - Event Creation"
+"Verify image upload validation for oversized file","Validate image upload validation for oversized file","functional_web","high","ready","Admin is on Event Creation page; Oversized image file available (8MB)","Attempt to upload 8MB image file","Step completes as expected","Observe validation response","Upload validation error:
+- Upload rejected due to file size > 5MB
+- Error toast message displayed: 'Image size must be less than 5MB'
+- Image not added to event
+- Admin can try with smaller file
+- Upload frame highlighted in red","","","","","","","cms, validation, negative, image-size","CMS - Event Creation"
+"Verify image upload validation for unsupported format","Validate image upload validation for unsupported format","functional_web","high","ready","Admin is on Event Creation page; Unsupported file format available (BMP, GIF, TIFF)","Attempt to upload BMP format image","Step completes as expected","Observe validation response","Format validation error:
+- Upload rejected due to unsupported format
+- Error message: 'Only JPG and PNG formats supported'
+- File not uploaded
+- Admin must use JPG or PNG format","","","","","","","cms, validation, negative, file-format","CMS - Event Creation"
+"Remove uploaded event image and re-upload","Validate remove uploaded event image and re-upload","functional_web","medium","ready","Admin is on Event Creation page; 2 images already uploaded","View uploaded images in preview","Step completes as expected","Click remove button on second image","Step completes as expected","Confirm removal","Step completes as expected","Upload new image to replace","Step completes as expected","Observe result","Image removal and replacement successful:
+- Remove button removes selected image
+- Image slot becomes available again
+- New image can be uploaded via drag & drop
+- Total images can still be up to 3
+- All images properly ordered in preview","cms, image-management, remove-replace","CMS - Event Creation"
+"Verify minimum 1 image required for publishing event","Validate minimum 1 image required for publishing event","functional_web","high","ready","Admin is on Event Creation page; All required text fields completed; No images uploaded","Fill all required text fields correctly","Step completes as expected","Leave image upload area empty (0 images)","Step completes as expected","Attempt to click 'Post Event' button","Step completes as expected","Observe validation","Image validation error:
+- 'Post Event' button disabled
+- Image upload area highlighted in red
+- Error message: 'At least 1 image required for publishing'
+- Cannot publish without minimum 1 image
+- Can still save as draft without images","","","cms, validation, negative, minimum-images","CMS - Event Creation"
+"Verify event description character limit validation","Validate event description character limit validation","functional_web","medium","ready","Admin is on Event Creation page","Navigate to Event Description field","Step completes as expected","Enter text exceeding 180 characters (e.g., 200 characters)","Step completes as expected","Observe character counter","Step completes as expected","Attempt to continue typing","Character limit enforced:
+- Character counter shows current count vs max (e.g., '180/180')
+- Cannot type beyond 180 character limit
+- Description field blocks additional input
+- If exceeding, validation error shown
+- Admin must reduce text to within limit","","","cms, validation, character-limit","CMS - Event Creation"
+"Verify Events List Table displays all events correctly","Validate events list table displays all events correctly","functional_web","high","ready","Admin logged into Events Management CMS; Multiple events exist with different statuses:; - 3 Posted events; - 2 Draft events; - Events with various dates (past, today, future)","Navigate to Events List page in CMS","Step completes as expected","Observe table display","Step completes as expected","Check table columns and data","Step completes as expected","Verify sorting order","Events List Table displays correctly:
+- Columns: No, Event Name, Status, Date, Time, Region, Action
+- Posted events show status as 'Posted' (green text)
+- Draft events show status as 'Saved as draft' (grey text)
+- Events sorted by most recently created (descending order)
+- Total count displayed at bottom: 'Total 5'
+- All events visible in single view","","","cms, events-list, table-display","CMS - Events List"
+"Search events by event name in real-time","Validate search events by event name in real-time","functional_web","high","ready","Admin is on Events List page; Events exist: 'Jakarta Networking Night', 'Bali Beach Meetup', 'Surabaya Tech Talk'","Locate search bar in Events List","Step completes as expected","Type 'Jakarta' in search bar","Step completes as expected","Observe real-time filtering","Step completes as expected","Clear and type 'beach' (lowercase)","Step completes as expected","Verify case-insensitive search","Search functions correctly:
+- Real-time filtering across Event Name column
+- Case-insensitive search
+- Typing 'Jakarta' shows only 'Jakarta Networking Night'
+- Typing 'beach' shows 'Bali Beach Meetup'
+- No results shows 'No events found' empty state","cms, search, real-time-filter","CMS - Events List"
+"Filter events by 'All' - default state","Validate filter events by 'all' - default state","functional_web","medium","ready","Admin is on Events List page; Events with various dates exist:; - 2 past events; - 1 event today; - 3 future events","Observe Events List on page load","Step completes as expected","Check 'All' filter chip state","Step completes as expected","View displayed events","'All' filter active by default:
+- All events displayed regardless of date or status
+- Shows past, today, and future events
+- Shows both Posted and Draft status events
+- Total count: 6 events
+- Filter chip highlighted as selected","","","","","cms, filter, default-state","CMS - Events List"
+"Filter events by 'Upcoming' to show future events","Validate filter events by 'upcoming' to show future events","functional_web","high","ready","Admin is on Events List page; Current date: December 19, 2024; Events exist:; - Event A: December 15, 2024 (past); - Event B: December 19, 2024 (today); - Event C: December 25, 2024 (future); - Event D: January 5, 2025 (future)","Click 'Upcoming' filter chip","Step completes as expected","Observe table filtering","Step completes as expected","Check displayed events","Upcoming filter displays correctly:
+- Shows events dated today or in the future
+- Event B (today), Event C, and Event D displayed
+- Past events (Event A) hidden
+- Total count: 3 events
+- Filter chip highlighted as active","","","","","cms, filter, upcoming-events","CMS - Events List"
+"Filter events by 'Past' to show expired events","Validate filter events by 'past' to show expired events","functional_web","high","ready","Admin is on Events List page; Current date: December 19, 2024; Events with various dates exist as in TC-EVENT-068","Click 'Past' filter chip","Step completes as expected","Observe table filtering","Step completes as expected","Check displayed events","Past filter displays correctly:
+- Shows only events with dates before today
+- Event A (December 15, 2024) displayed
+- Today's event and future events hidden
+- Total count: 1 event
+- Filter chip highlighted as active","","","","","cms, filter, past-events","CMS - Events List"
+"View event details in read-only preview mode","Validate view event details in read-only preview mode","functional_web","medium","ready","Admin is on Events List page; Event exists: 'Jakarta Networking Night'","Locate 'Jakarta Networking Night' in table","Step completes as expected","Click 'View' action button","Step completes as expected","Observe event preview display","Event preview opens:
+- Read-only view of event as displayed in mobile app
+- Shows all event details: images, title, date, time, location, description
+- Cannot edit from this view
+- Admin can review how event appears to users
+- Close button to return to Events List","","","","","cms, view-event, preview-mode","CMS - Events List"
+"Hide published event from mobile app visibility","Validate hide published event from mobile app visibility","functional_web","high","ready","Admin is on Events List page; Published event exists with status 'Posted'; Event is currently visible in mobile app","Locate posted event in table","Step completes as expected","Click 'Hide' action button","Step completes as expected","Confirm hide action in modal: 'Are you sure you want to hide this event?'","Step completes as expected","Observe result","Event hidden successfully:
+- Confirmation modal displayed before hiding
+- Event status remains 'Posted' in CMS
+- Event becomes invisible in mobile app immediately
+- Action button changes from 'Hide' to 'Show'
+- Event still visible in CMS for management
+- Can be re-shown later","","","cms, hide-event, visibility-control","CMS - Events List"
+"Re-show previously hidden event in mobile app","Validate re-show previously hidden event in mobile app","functional_web","high","ready","Admin is on Events List page; Event was previously hidden; Action button shows 'Show'","Locate hidden event in table","Step completes as expected","Click 'Show' action button","Step completes as expected","Confirm show action","Step completes as expected","Observe result","Event re-shown successfully:
+- Event becomes visible in mobile app again
+- Users can now see and register for event
+- Action button changes back to 'Hide'
+- Event status remains 'Posted'
+- Immediate visibility to mobile users","","","cms, show-event, visibility-control","CMS - Events List"
+"Edit existing event and update successfully","Validate edit existing event and update successfully","functional_web","high","ready","Admin is on Event Details & Registrations page; Event exists: 'Jakarta Networking Night'; Original Max Registrations: 50; Original Time: '18:00 - 21:00'","Navigate to event edit tab","Step completes as expected","Change Time to '19:00 - 22:00'","Step completes as expected","Change Max Registrations to '60'","Step completes as expected","Update Event Description","Step completes as expected","Click 'Update Event' button","Step completes as expected","cms, edit-event, update-event","CMS - Event Registration Management"
+"Verify cannot reduce max capacity below current registrations","Validate cannot reduce max capacity below current registrations","functional_web","high","ready","Admin is editing event; Current Max Registrations: 50; Current registered participants: 35","Navigate to event edit tab","Step completes as expected","Attempt to change Max Registrations to '30' (below current 35)","Step completes as expected","Click 'Update Event' button","Step completes as expected","Observe validation","Validation error prevents update:
+- Error message: 'Cannot set capacity below current registrations (35)'
+- Max Registrations field highlighted in red
+- Update blocked until valid capacity entered
+- Must be greater than or equal to 35
+- Other valid edits not saved until this is corrected","","","cms, validation, negative, capacity-limit","CMS - Event Registration Management"
+"View complete registration list for event","Validate view complete registration list for event","functional_web","high","ready","Admin is on Event Details & Registrations page; Event has 25 registrations and 5 waitlisted users","Navigate to Registration tab","Step completes as expected","Observe registration table","Step completes as expected","Check table columns and data","Registration table displays correctly:
+- Columns: No, Order Code, Date Registered, Account ID, Name, Number, Email, Action
+- All 25 registered participants listed
+- Each entry shows complete registration details
+- Search by name available
+- Total count displayed: '25'
+- Filter chips show 'Registered' and 'Waitlisted' options","","","","","cms, registration-list, attendee-management","CMS - Event Registration Management"
+"Filter registrations by 'Registered' status","Validate filter registrations by 'registered' status","functional_web","high","ready","Admin views registration table; 25 registered users, 5 waitlisted users","Click 'Registered' filter chip","Step completes as expected","Observe table filtering","Step completes as expected","Check displayed records","Registered filter displays:
+- Only users who have received tickets shown
+- 25 registered participants displayed
+- Waitlisted users hidden
+- Total count: 25
+- Each entry has valid ticket and QR code","","","","","cms, filter, registered-status","CMS - Event Registration Management"
+"Filter registrations by 'Waitlisted' status","Validate filter registrations by 'waitlisted' status","functional_web","high","ready","Admin views registration table; 25 registered users, 5 waitlisted users","Click 'Waitlisted' filter chip","Step completes as expected","Observe table filtering","Step completes as expected","Check displayed records","Waitlisted filter displays:
+- Only users on waitlist shown
+- 5 waitlisted participants displayed
+- Registered users hidden
+- Total count: 5
+- 'Accept' button visible for each waitlisted entry","","","","","cms, filter, waitlist-status","CMS - Event Registration Management"
+"View attendee ticket details with QR code","Validate view attendee ticket details with qr code","functional_web","high","ready","Admin views registration table; Registered attendee: 'John Doe', Order Code: '12345'","Locate John Doe in registration table","Step completes as expected","Click 'View Ticket' in Action column","Step completes as expected","Observe ticket detail modal","Ticket detail modal displays:
+- Full registration details for John Doe
+- Unique QR code based on order code '12345'
+- Order code displayed: '12345'
+- Event information
+- Registration date and time
+- Close button (X) to dismiss modal
+- QR code scannable for verification","","","","","cms, ticket-details, qr-code","CMS - Event Registration Management"
+"Revoke attendee ticket and free up capacity spot","Validate revoke attendee ticket and free up capacity spot","functional_web","high","ready","Admin views registration table; Event capacity: 50, current registrations: 45; Registered attendee exists","Open attendee ticket detail modal","Step completes as expected","Click 'Revoke Ticket' button","Step completes as expected","Confirm revocation","Step completes as expected","Observe result","Ticket revocation successful:
+- Ticket becomes invalid immediately
+- Attendee removed from registration list
+- Registration count decreases to 44
+- 1 spot becomes available (capacity shows 44/50)
+- Ticket removed from user's 'My Tickets' screen in app
+- Spot available for new registration or waitlist acceptance","","","cms, revoke-ticket, capacity-management","CMS - Event Registration Management"
+"Accept waitlisted attendee and convert to registered","Validate accept waitlisted attendee and convert to registered","functional_web","high","ready","Admin views registration table filtered by 'Waitlisted'; Waitlisted user: 'Jane Smith'; Event capacity: 50, current registrations: 48 (2 spots available)","Filter by 'Waitlisted' status","Step completes as expected","Locate Jane Smith in waitlist","Step completes as expected","Click 'Accept' button","Step completes as expected","Confirm acceptance","Step completes as expected","Observe update","Waitlist acceptance successful:
+- Jane Smith's status changes from Waitlisted → Registered
+- Valid ticket QR code generated for Jane Smith
+- Registration count increases to 49
+- User sees 'You're In / Ticket Ready' notification in app
+- Ticket appears in user's 'My Tickets' screen
+- Temporary waitlist entry erased, full registration record created
+- User can view QR code and event details","cms, accept-waitlist, status-conversion","CMS - Event Registration Management"
+"Accept waitlisted user when event at full capacity","Validate accept waitlisted user when event at full capacity","functional_web","high","ready","Admin views waitlist; Event capacity: 50, current registrations: 50 (FULL); Waitlisted user exists","Verify event is at full capacity (50/50)","Step completes as expected","Filter by 'Waitlisted'","Step completes as expected","Click 'Accept' on waitlisted user","Step completes as expected","Confirm acceptance","Step completes as expected","Check capacity override","System overrides capacity limitation:
+- Waitlisted user accepted even though event was full
+- Registration count increases to 51 (exceeds original capacity)
+- System allows manual capacity override by admin
+- Valid ticket generated
+- User converted to Registered status
+- Capacity now shows 51/50 in CMS","cms, capacity-override, waitlist-acceptance","CMS - Event Registration Management"
+"Search attendees by name in registration table","Validate search attendees by name in registration table","functional_web","medium","ready","Admin views registration table; Multiple registrations exist including 'John Doe', 'Jane Smith', 'Bob Johnson'","Locate search bar in registration table","Step completes as expected","Type 'Jane' in search","Step completes as expected","Observe filtering","Step completes as expected","Clear and search 'DOE' (uppercase)","Step completes as expected","Verify case-insensitive","Search functions correctly:
+- Real-time filtering by registrant name
+- Case-insensitive search
+- Typing 'Jane' shows 'Jane Smith'
+- Typing 'DOE' shows 'John Doe'
+- Empty result shows appropriate message","cms, search, attendee-search","CMS - Event Registration Management"
+"Export event registrations as CSV","Validate export event registrations as csv","functional_web","high","ready","Admin views registration table for 'Jakarta Networking Night'; 45 registered attendees; Current date: December 19, 2024","Navigate to registration table","Step completes as expected","Click 'Export Registrations' button","Step completes as expected","Download CSV file","Step completes as expected","Open file to verify content","CSV export successful:
+- File downloaded with name: 'jakarta_networking_night_registrations_20241219.csv'
+- CSV contains all attendee data from table
+- Columns: No, Order Code, Date Registered, Account ID, Name, Number, Email
+- All 45 registrations present in export
+- Data properly formatted for spreadsheet viewing
+- Can be used for event check-in or communications","","","cms, export-csv, registration-export","CMS - Event Registration Management"
+"Verify inline validation errors prevent invalid event updates","Validate inline validation errors prevent invalid event updates","functional_web","high","ready","Admin is editing event details","Clear Event Name field (make it empty)","Step completes as expected","Enter invalid Time format: '25:00 - 26:00'","Step completes as expected","Enter Max Registrations: '0'","Step completes as expected","Attempt to click 'Update Event' button","Step completes as expected","Observe validation","Multiple validation errors shown:
+- Event Name field highlighted: 'Event name is required'
+- Time field highlighted: 'Invalid time format (must be HH:MM)'
+- Max Registrations highlighted: 'Must be greater than 0'
+- All invalid fields shown inline with red highlight
+- 'Update Event' button disabled
+- Cannot save until all errors resolved","cms, validation, negative, inline-errors","CMS - Event Registration Management"

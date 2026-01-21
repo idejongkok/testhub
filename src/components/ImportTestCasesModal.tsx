@@ -48,12 +48,17 @@ export default function ImportTestCasesModal({ projectId, onClose, onSuccess }: 
       return
     }
 
+    console.log('Setting importing to true...')
     setImporting(true)
     setResult(null)
 
     try {
+      console.log('Reading file text...')
       const text = await file.text()
+      console.log('File text read, length:', text.length)
+      console.log('Parsing CSV...')
       const { testCases, suites, errors: parseErrors } = parseQaseCSV(text)
+      console.log('CSV parsed. Test cases:', testCases.length, 'Suites:', suites.length, 'Errors:', parseErrors.length)
 
       const importErrors: string[] = [...parseErrors]
       let successCount = 0
@@ -137,12 +142,15 @@ export default function ImportTestCasesModal({ projectId, onClose, onSuccess }: 
         onSuccess()
       }
     } catch (error) {
+      console.error('IMPORT ERROR:', error)
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack')
       setResult({
         success: 0,
         errors: [`Failed to parse CSV: ${error instanceof Error ? error.message : 'Unknown error'}`],
         suites: 0
       })
     } finally {
+      console.log('Setting importing to false...')
       setImporting(false)
     }
   }

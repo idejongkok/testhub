@@ -48,24 +48,34 @@ interface ParsedSuite {
   parent_id: string | null
 }
 
-export function parseQaseCSV(csvText: string): { 
+export function parseQaseCSV(csvText: string): {
   testCases: ParsedTestCase[]
   suites: ParsedSuite[]
   errors: string[]
 } {
-  const lines = csvText.split('\n')
-  const headers = lines[0].split(',').map(h => h.trim())
-  
+  // Parse CSV properly handling multi-line fields within quotes
+  const rows = parseCSVRows(csvText)
+
+  if (rows.length === 0) {
+    return { testCases: [], suites: [], errors: ['CSV is empty'] }
+  }
+
+  const headers = rows[0].map(h => h.trim().replace(/^"|"$/g, ''))
+
+  console.log('CSV Parse - Total rows:', rows.length)
+  console.log('CSV Parse - Headers:', headers)
+  console.log('CSV Parse - First few headers:', headers.slice(0, 10))
+
   const testCases: ParsedTestCase[] = []
   const suites: ParsedSuite[] = []
   const errors: string[] = []
   const suiteMap = new Map<string, ParsedSuite>()
 
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i].length === 0) continue
 
     try {
-      const row = parseCSVLine(lines[i])
+      const row = rows[i]
       const rowData: any = {}
       headers.forEach((header, index) => {
         rowData[header] = row[index] || ''
@@ -86,7 +96,13 @@ export function parseQaseCSV(csvText: string): {
       }
 
       // Skip if no title (invalid test case)
-      if (!rowData.title) continue
+      if (!rowData.title) {
+        if (i <= 3) {  // Log first few rows only
+          console.log(`Row ${i} skipped - no title. rowData keys:`, Object.keys(rowData).slice(0, 10))
+          console.log(`Row ${i} first values:`, Object.values(rowData).slice(0, 5))
+        }
+        continue
+      }
 
       // Map Qase priority to our priority
       const priority = mapPriority(rowData.priority, rowData.severity)
@@ -170,6 +186,65 @@ export function parseQaseCSV(csvText: string): {
   return { testCases, suites, errors }
 }
 
+function parseCSVRows(csvText: string): string[][] {
+  const rows: string[][] = []
+  let currentRow: string[] = []
+  let currentField = ''
+  let inQuotes = false
+
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i]
+    const nextChar = csvText[i + 1]
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote - add one quote and skip next
+        currentField += '"'
+        i++
+      } else {
+        // Toggle quote state
+        inQuotes = !inQuotes
+      }
+    } else if (char === ',' && !inQuotes) {
+      // End of field
+      currentRow.push(currentField)
+      currentField = ''
+    } else if (char === '\n' && !inQuotes) {
+      // End of row
+      currentRow.push(currentField)
+      if (currentRow.length > 0 && currentRow.some(f => f.trim())) {
+        rows.push(currentRow)
+      }
+      currentRow = []
+      currentField = ''
+    } else if (char === '\r' && nextChar === '\n' && !inQuotes) {
+      // Windows line ending - skip \r, \n will be handled next iteration
+      continue
+    } else if (char === '\r' && !inQuotes) {
+      // Mac line ending
+      currentRow.push(currentField)
+      if (currentRow.length > 0 && currentRow.some(f => f.trim())) {
+        rows.push(currentRow)
+      }
+      currentRow = []
+      currentField = ''
+    } else {
+      // Regular character
+      currentField += char
+    }
+  }
+
+  // Don't forget the last field and row
+  if (currentField || currentRow.length > 0) {
+    currentRow.push(currentField)
+    if (currentRow.some(f => f.trim())) {
+      rows.push(currentRow)
+    }
+  }
+
+  return rows
+}
+
 function parseCSVLine(line: string): string[] {
   const result: string[] = []
   let current = ''
@@ -177,7 +252,7 @@ function parseCSVLine(line: string): string[] {
 
   for (let i = 0; i < line.length; i++) {
     const char = line[i]
-    
+
     if (char === '"') {
       if (inQuotes && line[i + 1] === '"') {
         current += '"'
@@ -192,7 +267,7 @@ function parseCSVLine(line: string): string[] {
       current += char
     }
   }
-  
+
   result.push(current)
   return result
 }
