@@ -244,7 +244,14 @@ export default function ImportTestCasesModal({ projectId, onClose, onSuccess }: 
                 Cancel
               </Button>
               <Button
-                onClick={handleImport}
+                type="button"
+                onClick={() => {
+                  console.log('BUTTON CLICKED!')
+                  console.log('Button disabled?', !file || importing)
+                  console.log('file:', file)
+                  console.log('importing:', importing)
+                  handleImport()
+                }}
                 disabled={!file || importing}
               >
                 {importing ? (
