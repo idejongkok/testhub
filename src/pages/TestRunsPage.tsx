@@ -124,7 +124,7 @@ export default function TestRunsPage() {
               planCases.map(pc => ({
                 test_run_id: newRun.id,
                 test_case_id: pc.test_case_id,
-                result_status: 'untested' as const,
+                // Let database use default value for result_status
               }))
             )
 
