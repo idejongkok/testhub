@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Upload, Download, X, CheckCircle, AlertCircle, FileText } from 'lucide-react'
@@ -20,15 +20,23 @@ export default function ImportTestCasesModal({ projectId, onClose, onSuccess }: 
     suites: number
   } | null>(null)
 
+  useEffect(() => {
+    console.log('ImportTestCasesModal mounted')
+    console.log('State - file:', file, 'importing:', importing)
+  }, [file, importing])
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     console.log('File selected:', selectedFile)
-    if (selectedFile && selectedFile.type === 'text/csv') {
+    console.log('File type:', selectedFile?.type)
+    console.log('File name:', selectedFile?.name)
+
+    if (selectedFile && selectedFile.name.endsWith('.csv')) {
       setFile(selectedFile)
       setResult(null)
       console.log('File set successfully:', selectedFile.name)
     } else {
-      console.log('Invalid file type:', selectedFile?.type)
+      console.log('Invalid file - not a CSV')
       alert('Please select a valid CSV file')
     }
   }
