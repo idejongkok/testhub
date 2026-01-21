@@ -163,6 +163,15 @@ export default function TestRunsPage() {
     }
   }
 
+  const handleStatusChange = async (runId: string, newStatus: 'not_started' | 'in_progress' | 'completed') => {
+    await supabase
+      .from('test_runs')
+      .update({ run_status: newStatus })
+      .eq('id', runId)
+
+    fetchTestRuns()
+  }
+
   const handleViewReport = (runId: string) => {
     navigate(`/test-runs/${runId}/report`)
   }
@@ -254,10 +263,19 @@ export default function TestRunsPage() {
                       {run.description && (
                         <p className="text-gray-600 mt-1">{run.description}</p>
                       )}
-                      <div className="flex gap-4 mt-2 text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(run.run_status)}`}>
-                          {run.run_status}
-                        </span>
+                      <div className="flex gap-4 mt-2 text-sm items-center">
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-gray-600">Status:</label>
+                          <select
+                            value={run.run_status}
+                            onChange={(e) => handleStatusChange(run.id, e.target.value as 'not_started' | 'in_progress' | 'completed')}
+                            className={`px-2 py-1 rounded text-xs font-medium border-0 cursor-pointer ${getStatusColor(run.run_status)}`}
+                          >
+                            <option value="not_started">not_started</option>
+                            <option value="in_progress">in_progress</option>
+                            <option value="completed">completed</option>
+                          </select>
+                        </div>
                         <span className="text-gray-600">
                           Environment: <span className="font-medium">{run.environment}</span>
                         </span>
