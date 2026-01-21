@@ -275,10 +275,22 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
       tc.title.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Filter results by status
-  const filteredResults = statusFilter === 'all'
-    ? results
-    : results.filter(r => r.result_status === statusFilter)
+  // Filter results by status and search query
+  const filteredResults = results
+    .filter(r => {
+      // Filter by status
+      if (statusFilter !== 'all' && r.result_status !== statusFilter) {
+        return false
+      }
+      // Filter by search query
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase()
+        const title = r.test_case?.title?.toLowerCase() || ''
+        const description = r.test_case?.description?.toLowerCase() || ''
+        return title.includes(query) || description.includes(query)
+      }
+      return true
+    })
 
   const stats = {
     total: results.length,
@@ -504,39 +516,49 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
           )}
 
           {/* Actions Bar */}
-          <div className="mb-4 flex justify-between items-center">
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => setShowAddModal(true)}>
-                <Plus className="w-4 h-4 mr-1" />
-                Add Test Cases
-              </Button>
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.size === filteredResults.length && filteredResults.length > 0}
-                  onChange={toggleSelectAll}
-                  className="rounded"
-                />
-                Select All
-              </label>
+          <div className="mb-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => setShowAddModal(true)}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Test Cases
+                </Button>
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === filteredResults.length && filteredResults.length > 0}
+                    onChange={toggleSelectAll}
+                    className="rounded"
+                  />
+                  Select All
+                </label>
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Filter:</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as ResultStatus | 'all')}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="all">All ({stats.total})</option>
+                  <option value="passed">✓ Passed ({stats.passed})</option>
+                  <option value="failed">✗ Failed ({stats.failed})</option>
+                  <option value="blocked">⊘ Blocked ({stats.blocked})</option>
+                  <option value="skipped">↷ Skipped ({stats.skipped})</option>
+                  <option value="untested">− Untested ({stats.untested})</option>
+                </select>
+              </div>
             </div>
 
-            {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Filter:</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as ResultStatus | 'all')}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="all">All ({stats.total})</option>
-                <option value="passed">✓ Passed ({stats.passed})</option>
-                <option value="failed">✗ Failed ({stats.failed})</option>
-                <option value="blocked">⊘ Blocked ({stats.blocked})</option>
-                <option value="skipped">↷ Skipped ({stats.skipped})</option>
-                <option value="untested">− Untested ({stats.untested})</option>
-              </select>
-            </div>
+            {/* Search Bar */}
+            <Input
+              placeholder="Search test cases by title or description..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full"
+            />
           </div>
 
           {/* Test Cases List */}
