@@ -130,12 +130,20 @@ export default function TestRunExecutor({
       const totalExecuted = results.filter(r => r.result_status !== 'untested').length
       const totalTests = results.length
 
+      console.log('Test Run Status Calculation:', {
+        totalTests,
+        totalExecuted,
+        results: results.map(r => r.result_status)
+      })
+
       let runStatus: 'not_started' | 'in_progress' | 'completed' = 'not_started'
       if (totalExecuted === totalTests && totalTests > 0) {
         runStatus = 'completed'
       } else if (totalExecuted > 0) {
         runStatus = 'in_progress'
       }
+
+      console.log('Setting run status to:', runStatus)
 
       await supabase
         .from('test_runs')

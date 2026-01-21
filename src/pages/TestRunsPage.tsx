@@ -121,10 +121,11 @@ export default function TestRunsPage() {
           const { error: insertError } = await supabase
             .from('test_run_results')
             .insert(
-              planCases.map(pc => ({
+              planCases.map((pc, index) => ({
                 test_run_id: newRun.id,
                 test_case_id: pc.test_case_id,
-                // Let database use default value for result_status
+                result_status: 'untested' as const,
+                position: index,
               }))
             )
 
