@@ -22,16 +22,23 @@ export default function ImportTestCasesModal({ projectId, onClose, onSuccess }: 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
+    console.log('File selected:', selectedFile)
     if (selectedFile && selectedFile.type === 'text/csv') {
       setFile(selectedFile)
       setResult(null)
+      console.log('File set successfully:', selectedFile.name)
     } else {
+      console.log('Invalid file type:', selectedFile?.type)
       alert('Please select a valid CSV file')
     }
   }
 
   const handleImport = async () => {
-    if (!file) return
+    console.log('handleImport called, file:', file)
+    if (!file) {
+      console.log('No file selected, returning')
+      return
+    }
 
     setImporting(true)
     setResult(null)
