@@ -265,7 +265,7 @@ export default function TestRunReport() {
                             ? 'bg-green-100 text-green-700'
                             : 'bg-blue-100 text-blue-700'
                         }`}>
-                          {result.test_cases?.test_type}
+                          {result.test_cases?.test_type === 'api' ? 'API' : result.test_cases?.test_type === 'functional_mobile' ? 'Mobile' : 'Web'}
                         </span>
 
                         <span className={`px-2 py-0.5 text-xs rounded ${

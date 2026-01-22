@@ -276,7 +276,7 @@ export default function TestRunExecutor({
                   ? 'bg-green-100 text-green-700'
                   : 'bg-blue-100 text-blue-700'
               }`}>
-                {currentCase.test_type}
+                {currentCase.test_type === 'api' ? 'API' : currentCase.test_type === 'functional_mobile' ? 'Mobile' : 'Web'}
               </span>
               <span className={`px-2 py-1 rounded ${
                 currentCase.priority === 'critical'

@@ -517,7 +517,7 @@ export default function TestCasesPageWithTree() {
                         selectedCase.test_type === 'functional_mobile' ? 'bg-green-100 text-green-700' :
                         'bg-blue-100 text-blue-700'
                       }`}>
-                        {selectedCase.test_type}
+                        {selectedCase.test_type === 'api' ? 'API' : selectedCase.test_type === 'functional_mobile' ? 'Mobile' : 'Web'}
                       </span>
                       <span className={`px-2 py-1 text-xs font-medium rounded ${
                         selectedCase.priority === 'critical' ? 'bg-red-100 text-red-700' :

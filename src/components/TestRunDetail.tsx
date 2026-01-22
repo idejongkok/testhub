@@ -394,7 +394,7 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
                       : 'bg-blue-100 text-blue-700'
                   }`}
                 >
-                  {result.test_case.test_type}
+                  {result.test_case.test_type === 'api' ? 'API' : result.test_case.test_type === 'functional_mobile' ? 'Mobile' : 'Web'}
                 </span>
                 <span
                   className={`px-2 py-0.5 text-xs rounded ${
@@ -670,7 +670,7 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
                               : 'bg-blue-100 text-blue-700'
                           }`}
                         >
-                          {tc.test_type}
+                          {tc.test_type === 'api' ? 'API' : tc.test_type === 'functional_mobile' ? 'Mobile' : 'Web'}
                         </span>
                         <span
                           className={`px-2 py-0.5 text-xs rounded ${
@@ -711,7 +711,7 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
                           : 'bg-blue-100 text-blue-700'
                       }`}
                     >
-                      {selectedTestCase.test_type}
+                      {selectedTestCase.test_type === 'api' ? 'API' : selectedTestCase.test_type === 'functional_mobile' ? 'Mobile' : 'Web'}
                     </span>
                     <span
                       className={`px-2 py-0.5 text-xs rounded ${
