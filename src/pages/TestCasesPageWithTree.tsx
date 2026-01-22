@@ -320,11 +320,90 @@ export default function TestCasesPageWithTree() {
       .from('test_cases')
       .delete()
       .eq('id', caseId)
-    
+
     fetchData()
     if (selectedCase?.id === caseId) {
       setSelectedCase(null)
     }
+  }
+
+  // Drag-drop handlers for test cases and suites
+  const handleMoveTestCase = async (testCaseId: string, targetSuiteId: string | null, newPosition: number) => {
+    // Update suite_id and position
+    const { error } = await supabase
+      .from('test_cases')
+      .update({
+        suite_id: targetSuiteId,
+        position: newPosition,
+      })
+      .eq('id', testCaseId)
+
+    if (!error) {
+      // Recalculate positions for all test cases in target suite
+      const targetCases = testCases
+        .filter(tc => tc.suite_id === targetSuiteId && tc.id !== testCaseId)
+        .sort((a, b) => (a.position || 0) - (b.position || 0))
+
+      const updates = targetCases.map((tc, index) =>
+        supabase
+          .from('test_cases')
+          .update({ position: index + 1 })
+          .eq('id', tc.id)
+      )
+      await Promise.all(updates)
+      fetchData()
+    }
+  }
+
+  const handleMoveSuite = async (suiteId: string, targetParentId: string | null, newPosition: number) => {
+    // Update parent_id and position
+    const { error } = await supabase
+      .from('test_suites')
+      .update({
+        parent_id: targetParentId,
+        position: newPosition,
+      })
+      .eq('id', suiteId)
+
+    if (!error) {
+      // Recalculate positions for all suites with same parent
+      const siblingsSuites = testSuites
+        .filter(s => s.parent_id === targetParentId && s.id !== suiteId)
+        .sort((a, b) => (a.position || 0) - (b.position || 0))
+
+      const updates = siblingsSuites.map((s, index) =>
+        supabase
+          .from('test_suites')
+          .update({ position: index + 1 })
+          .eq('id', s.id)
+      )
+      await Promise.all(updates)
+      fetchData()
+    }
+  }
+
+  const handleReorderTestCases = async (suiteId: string | null, orderedIds: string[]) => {
+    // Update positions based on new order
+    const updates = orderedIds.map((id, index) =>
+      supabase
+        .from('test_cases')
+        .update({ position: index })
+        .eq('id', id)
+    )
+    await Promise.all(updates)
+    fetchData()
+  }
+
+  const handleReorderSuites = async (parentId: string | null, orderedIds: string[]) => {
+    // Update positions based on new order
+    const updates = orderedIds.map((id, index) =>
+      supabase
+        .from('test_suites')
+        .update({ position: index })
+        .eq('id', id)
+    )
+    await Promise.all(updates)
+    fetchData()
   }
 
   const resetCaseForm = () => {
@@ -495,6 +574,10 @@ export default function TestCasesPageWithTree() {
                   setShowSuiteModal(true)
                 }}
                 selectedId={selectedCase?.id || selectedSuite?.id}
+                onMoveTestCase={handleMoveTestCase}
+                onMoveSuite={handleMoveSuite}
+                onReorderTestCases={handleReorderTestCases}
+                onReorderSuites={handleReorderSuites}
               />
             )}
           </div>
