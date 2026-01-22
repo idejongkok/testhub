@@ -5,13 +5,13 @@ import Layout from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Plus, FolderKanban, Trash2, Edit2, Users } from 'lucide-react'
+import { Plus, FolderKanban, Trash2, Users, AlertCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import ProjectTeamModal from '@/components/ProjectTeamModal'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const { projects, loading, fetchProjects, createProject, deleteProject, setCurrentProject } = useProjectStore()
+  const { projects, loading, fetchProjects, createProject, deleteProject, setCurrentProject, currentProject } = useProjectStore()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTeamModal, setShowTeamModal] = useState<{id: string, name: string} | null>(null)
   const [formData, setFormData] = useState({
@@ -58,6 +58,16 @@ export default function DashboardPage() {
             New Project
           </Button>
         </div>
+
+        {/* Alert: Select a project first */}
+        {!currentProject && projects.length > 0 && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+            <p className="text-yellow-800">
+              Please select a project below to access Test Cases, Test Plans, Test Runs, and Bugs.
+            </p>
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-12">
