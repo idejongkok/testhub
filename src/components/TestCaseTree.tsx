@@ -8,7 +8,8 @@ import {
   Trash2,
   Plus,
   FolderPlus,
-  GripVertical
+  GripVertical,
+  Check
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TestType, Priority, Status } from '@/types/database'
@@ -58,12 +59,12 @@ interface TreeNodeData {
   isExpanded: boolean
 }
 
-type DragItemType = 'test-case' | 'suite'
+type DragItemType = 'test-case' | 'suite' | 'multi-test-case'
 
 interface DragItem {
   id: string
   type: DragItemType
-  data: TestCase | TestSuite
+  data: TestCase | TestSuite | TestCase[]
 }
 
 interface TestCaseTreeProps {
@@ -80,6 +81,7 @@ interface TestCaseTreeProps {
   selectedId?: string | null
   // Drag-drop handlers
   onMoveTestCase?: (testCaseId: string, targetSuiteId: string | null, newPosition: number) => Promise<void>
+  onMoveMultipleTestCases?: (testCaseIds: string[], targetSuiteId: string | null) => Promise<void>
   onMoveSuite?: (suiteId: string, targetParentId: string | null, newPosition: number) => Promise<void>
   onReorderTestCases?: (suiteId: string | null, orderedIds: string[]) => Promise<void>
   onReorderSuites?: (parentId: string | null, orderedIds: string[]) => Promise<void>
@@ -119,21 +121,27 @@ const getStatusColor = (status: Status) => {
   }
 }
 
-// Sortable Test Case Item
+// Sortable Test Case Item with checkbox
 function SortableTestCaseItem({
   testCase,
   depth,
   isSelected,
+  isChecked,
   onSelect,
+  onToggleCheck,
   onEdit,
   onDelete,
+  showCheckbox,
 }: {
   testCase: TestCase
   depth: number
   isSelected: boolean
+  isChecked: boolean
   onSelect: () => void
+  onToggleCheck: () => void
   onEdit: () => void
   onDelete: () => void
+  showCheckbox: boolean
 }) {
   const {
     attributes,
@@ -164,16 +172,36 @@ function SortableTestCaseItem({
       className={cn(
         'flex items-center gap-2 px-2 py-2 hover:bg-gray-50 rounded cursor-pointer group transition-colors',
         isSelected && 'bg-primary-50 border-l-2 border-primary-500',
+        isChecked && 'bg-blue-50',
         isDragging && 'shadow-lg bg-white z-50'
       )}
       onClick={onSelect}
     >
+      {/* Checkbox for multi-select */}
+      {showCheckbox && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleCheck()
+          }}
+          className={cn(
+            'w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 cursor-pointer transition-colors',
+            isChecked
+              ? 'bg-blue-500 border-blue-500 text-white'
+              : 'border-gray-300 hover:border-blue-400'
+          )}
+          style={{ marginLeft: `${depth * 20 + 8}px` }}
+        >
+          {isChecked && <Check className="w-3 h-3" />}
+        </div>
+      )}
+
       {/* Drag Handle */}
       <div
         {...attributes}
         {...listeners}
         className="flex-shrink-0 cursor-grab active:cursor-grabbing hover:text-primary-600 touch-none"
-        style={{ paddingLeft: `${depth * 20 + 8}px` }}
+        style={!showCheckbox ? { paddingLeft: `${depth * 20 + 8}px` } : undefined}
         onClick={(e) => e.stopPropagation()}
       >
         <GripVertical className="w-4 h-4 text-gray-400" />
@@ -233,6 +261,9 @@ function SortableSuiteNode({
   node,
   depth,
   selectedId,
+  checkedIds,
+  onToggleCheck,
+  showCheckbox,
   onToggleExpand,
   onSelectSuite,
   onSelectCase,
@@ -247,6 +278,9 @@ function SortableSuiteNode({
   node: TreeNodeData
   depth: number
   selectedId?: string | null
+  checkedIds: Set<string>
+  onToggleCheck: (id: string) => void
+  showCheckbox: boolean
   onToggleExpand: (suiteId: string) => void
   onSelectSuite: (suite: TestSuite) => void
   onSelectCase: (testCase: TestCase) => void
@@ -401,6 +435,9 @@ function SortableSuiteNode({
                 node={childNode}
                 depth={depth + 1}
                 selectedId={selectedId}
+                checkedIds={checkedIds}
+                onToggleCheck={onToggleCheck}
+                showCheckbox={showCheckbox}
                 onToggleExpand={onToggleExpand}
                 onSelectSuite={onSelectSuite}
                 onSelectCase={onSelectCase}
@@ -426,6 +463,9 @@ function SortableSuiteNode({
                 testCase={testCase}
                 depth={depth + 1}
                 isSelected={selectedId === testCase.id}
+                isChecked={checkedIds.has(testCase.id)}
+                onToggleCheck={() => onToggleCheck(testCase.id)}
+                showCheckbox={showCheckbox}
                 onSelect={() => onSelectCase(testCase)}
                 onEdit={() => onEditCase(testCase)}
                 onDelete={() => onDeleteCase(testCase.id)}
@@ -461,12 +501,14 @@ export default function TestCaseTree({
   onAddSubSuite,
   selectedId,
   onMoveTestCase,
+  onMoveMultipleTestCases,
   onMoveSuite,
   onReorderTestCases,
   onReorderSuites,
 }: TestCaseTreeProps) {
   const [activeItem, setActiveItem] = useState<DragItem | null>(null)
   const [overSuiteId, setOverSuiteId] = useState<string | null>(null)
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set())
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -478,6 +520,37 @@ export default function TestCaseTree({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   )
+
+  // Toggle checkbox for a test case
+  const handleToggleCheck = (id: string) => {
+    setCheckedIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }
+
+  // Clear all selections
+  const clearChecked = () => {
+    setCheckedIds(new Set())
+  }
+
+  // Get all test cases from tree (flat list)
+  const getAllTestCases = (): TestCase[] => {
+    const cases: TestCase[] = []
+    const traverse = (nodes: TreeNodeData[]) => {
+      nodes.forEach(node => {
+        cases.push(...node.testCases)
+        traverse(node.children)
+      })
+    }
+    traverse(treeData)
+    return cases
+  }
 
   // Get all suites from tree (flat list)
   const getAllSuites = (): TestSuite[] => {
@@ -552,7 +625,22 @@ export default function TestCaseTree({
     const data = active.data.current
 
     if (data?.type === 'test-case') {
-      setActiveItem({ id: active.id as string, type: 'test-case', data: data.data })
+      const testCase = data.data as TestCase
+
+      // Check if this test case is part of checked items
+      if (checkedIds.has(testCase.id) && checkedIds.size > 1) {
+        // Multi-drag: get all checked test cases
+        const allTestCases = getAllTestCases()
+        const selectedTestCases = allTestCases.filter(tc => checkedIds.has(tc.id))
+        setActiveItem({
+          id: active.id as string,
+          type: 'multi-test-case',
+          data: selectedTestCases
+        })
+      } else {
+        // Single drag
+        setActiveItem({ id: active.id as string, type: 'test-case', data: testCase })
+      }
     } else if (data?.type === 'suite') {
       setActiveItem({ id: active.id as string, type: 'suite', data: data.data })
     }
@@ -569,6 +657,7 @@ export default function TestCaseTree({
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
+    const currentActiveItem = activeItem
     setActiveItem(null)
     setOverSuiteId(null)
 
@@ -577,10 +666,29 @@ export default function TestCaseTree({
     const activeData = active.data.current
     const overData = over.data.current
 
+    // Handle multi-select drag
+    if (currentActiveItem?.type === 'multi-test-case' && overData?.type === 'suite-drop-zone') {
+      const testCases = currentActiveItem.data as TestCase[]
+      const targetSuiteId = overData.suiteId as string | null
+
+      if (onMoveMultipleTestCases) {
+        await onMoveMultipleTestCases(testCases.map(tc => tc.id), targetSuiteId)
+        clearChecked()
+      }
+      return
+    }
+
     // Case 1: Dropping test case into a suite drop zone
     if (activeData?.type === 'test-case' && overData?.type === 'suite-drop-zone') {
       const testCase = activeData.data as TestCase
       const targetSuiteId = overData.suiteId as string | null
+
+      // Check if dragging a checked item (multi-drag)
+      if (checkedIds.has(testCase.id) && checkedIds.size > 1 && onMoveMultipleTestCases) {
+        await onMoveMultipleTestCases(Array.from(checkedIds), targetSuiteId)
+        clearChecked()
+        return
+      }
 
       if (testCase.suite_id !== targetSuiteId && onMoveTestCase) {
         await onMoveTestCase(testCase.id, targetSuiteId, 0)
@@ -689,6 +797,8 @@ export default function TestCaseTree({
     },
   })
 
+  const hasCheckedItems = checkedIds.size > 0
+
   return (
     <DndContext
       sensors={sensors}
@@ -697,6 +807,21 @@ export default function TestCaseTree({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
+      {/* Selection toolbar */}
+      {hasCheckedItems && (
+        <div className="mb-3 p-2 bg-blue-50 rounded-lg flex items-center justify-between">
+          <span className="text-sm text-blue-700 font-medium">
+            {checkedIds.size} test case{checkedIds.size > 1 ? 's' : ''} selected
+          </span>
+          <button
+            onClick={clearChecked}
+            className="text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
+
       <div className="space-y-0.5">
         {/* Root Suites */}
         <SortableContext
@@ -709,6 +834,9 @@ export default function TestCaseTree({
               node={node}
               depth={0}
               selectedId={selectedId}
+              checkedIds={checkedIds}
+              onToggleCheck={handleToggleCheck}
+              showCheckbox={true}
               onToggleExpand={onToggleExpand}
               onSelectSuite={onSelectSuite}
               onSelectCase={onSelectCase}
@@ -747,6 +875,9 @@ export default function TestCaseTree({
                 testCase={testCase}
                 depth={0}
                 isSelected={selectedId === testCase.id}
+                isChecked={checkedIds.has(testCase.id)}
+                onToggleCheck={() => handleToggleCheck(testCase.id)}
+                showCheckbox={true}
                 onSelect={() => onSelectCase(testCase)}
                 onEdit={() => onEditCase(testCase)}
                 onDelete={() => onDeleteCase(testCase.id)}
@@ -768,6 +899,18 @@ export default function TestCaseTree({
             <div className="flex items-center gap-2">
               <FileCheck className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium truncate">{(activeItem.data as TestCase).title}</span>
+            </div>
+          </div>
+        )}
+        {activeItem?.type === 'multi-test-case' && (
+          <div className="p-2 bg-white shadow-lg rounded border-2 border-blue-500 opacity-90 max-w-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                {(activeItem.data as TestCase[]).length}
+              </div>
+              <span className="text-sm font-medium">
+                {(activeItem.data as TestCase[]).length} test cases
+              </span>
             </div>
           </div>
         )}

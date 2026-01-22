@@ -7,6 +7,7 @@ import ProjectRoute from '@/components/ProjectRoute'
 
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
+const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
 const TestCasesPageWithTree = lazy(() => import('@/pages/TestCasesPageWithTree'))
 const TestPlansPage = lazy(() => import('@/pages/TestPlansPage'))
@@ -45,6 +46,7 @@ function App() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route
             path="/dashboard"
             element={

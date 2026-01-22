@@ -35,6 +35,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: 'https://testhub-rr.pages.dev/login',
+      },
     })
     if (data.user) {
       set({ user: data.user })

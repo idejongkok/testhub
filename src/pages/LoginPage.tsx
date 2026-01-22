@@ -1,18 +1,18 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { LogIn } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const { signIn, signUp } = useAuthStore()
+  const { signIn } = useAuthStore()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,9 +20,7 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    const { error } = isSignUp 
-      ? await signUp(email, password)
-      : await signIn(email, password)
+    const { error } = await signIn(email, password)
 
     if (error) {
       setError(error.message)
@@ -35,11 +33,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">
-            {isSignUp ? 'Create Account' : 'Sign In'}
-          </CardTitle>
-          <p className="text-sm text-gray-600 text-center mt-2">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mb-3">
+            <LogIn className="w-6 h-6 text-primary-600" />
+          </div>
+          <CardTitle className="text-2xl">Sign In</CardTitle>
+          <p className="text-sm text-gray-600 mt-2">
             TestHub - Quality Assurance Platform
           </p>
         </CardHeader>
@@ -58,7 +57,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="Enter your password"
               required
             />
 
@@ -73,22 +72,29 @@ export default function LoginPage() {
               className="w-full"
               disabled={loading}
             >
-              {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
+              {loading ? (
+                <>
+                  <span className="animate-spin mr-2">...</span>
+                  Signing In...
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign In
+                </>
+              )}
             </Button>
 
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(!isSignUp)
-                  setError('')
-                }}
-                className="text-sm text-primary-600 hover:text-primary-700"
-              >
-                {isSignUp 
-                  ? 'Already have an account? Sign In' 
-                  : "Don't have an account? Sign Up"}
-              </button>
+            <div className="text-center pt-4 border-t">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link
+                  to="/register"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  Create Account
+                </Link>
+              </p>
             </div>
           </form>
         </CardContent>

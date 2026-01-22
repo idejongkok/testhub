@@ -406,6 +406,27 @@ export default function TestCasesPageWithTree() {
     fetchData()
   }
 
+  const handleMoveMultipleTestCases = async (testCaseIds: string[], targetSuiteId: string | null) => {
+    // Get max position in target suite
+    const targetCases = testCases.filter(tc => tc.suite_id === targetSuiteId)
+    const maxPosition = targetCases.length > 0
+      ? Math.max(...targetCases.map(tc => tc.position || 0))
+      : -1
+
+    // Update all selected test cases
+    const updates = testCaseIds.map((id, index) =>
+      supabase
+        .from('test_cases')
+        .update({
+          suite_id: targetSuiteId,
+          position: maxPosition + 1 + index,
+        })
+        .eq('id', id)
+    )
+    await Promise.all(updates)
+    fetchData()
+  }
+
   const resetCaseForm = () => {
     setCaseForm({
       title: '',
@@ -575,6 +596,7 @@ export default function TestCasesPageWithTree() {
                 }}
                 selectedId={selectedCase?.id || selectedSuite?.id}
                 onMoveTestCase={handleMoveTestCase}
+                onMoveMultipleTestCases={handleMoveMultipleTestCases}
                 onMoveSuite={handleMoveSuite}
                 onReorderTestCases={handleReorderTestCases}
                 onReorderSuites={handleReorderSuites}
