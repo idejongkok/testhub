@@ -371,8 +371,8 @@ export default function TestRunsPage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                     >
                       <option value="staging">Staging</option>
+                      <option value="preproduction">Preproduction</option>
                       <option value="production">Production</option>
-                      <option value="development">Development</option>
                     </select>
                   </div>
                   {!editingRun && (
