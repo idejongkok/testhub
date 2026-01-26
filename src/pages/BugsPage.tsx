@@ -44,11 +44,12 @@ export default function BugsPage() {
   const [editingBug, setEditingBug] = useState<BugRow | null>(null)
   const [statusFilter, setStatusFilter] = useState<BugStatus | 'all'>('all')
   const [severityFilter, setSeverityFilter] = useState<BugSeverity | 'all'>('all')
-  const [prefillData, setPrefillData] = useState<any>(null)
+  const [, setPrefillData] = useState<any>(null)
   const [allUsers, setAllUsers] = useState<UserProfile[]>([])
   const [comments, setComments] = useState<BugComment[]>([])
   const [newComment, setNewComment] = useState('')
   const [loadingComments, setLoadingComments] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const [formData, setFormData] = useState({
     title: '',
@@ -273,38 +274,14 @@ export default function BugsPage() {
     })
   }
 
-  const getSeverityColor = (severity: BugSeverity) => {
-    switch (severity) {
-      case 'critical':
-        return 'bg-red-100 text-red-800'
-      case 'high':
-        return 'bg-orange-100 text-orange-800'
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'low':
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getStatusColor = (status: BugStatus) => {
-    switch (status) {
-      case 'open':
-        return 'bg-red-100 text-red-800'
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800'
-      case 'resolved':
-        return 'bg-green-100 text-green-800'
-      case 'closed':
-        return 'bg-gray-100 text-gray-800'
-      case 'wont_fix':
-        return 'bg-purple-100 text-purple-800'
-    }
-  }
-
   const filteredBugs = bugs.filter(bug => {
     const matchesStatus = statusFilter === 'all' || bug.status === statusFilter
     const matchesSeverity = severityFilter === 'all' || bug.severity === severityFilter
-    return matchesStatus && matchesSeverity
+    const matchesSearch = searchQuery === '' ||
+      bug.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      bug.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      bug.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+    return matchesStatus && matchesSeverity && matchesSearch
   })
 
   const stats = {
@@ -350,6 +327,13 @@ export default function BugsPage() {
         <Card className="mb-6">
           <CardContent className="py-4">
             <div className="flex gap-4">
+              <Input
+                placeholder="Search bugs by title, description, or tags..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 max-w-md"
+              />
+
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as BugStatus | 'all')}
@@ -402,110 +386,140 @@ export default function BugsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredBugs.map(bug => (
-              <Card key={bug.id}>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Bug className="w-5 h-5 text-gray-600" />
-                        <h3 className="text-lg font-semibold text-gray-900">{bug.title}</h3>
-                      </div>
+              <Card key={bug.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                <div className="flex">
+                  {/* Status Color Bar */}
+                  <div className={`w-1.5 flex-shrink-0 ${
+                    bug.status === 'open' ? 'bg-red-500' :
+                    bug.status === 'in_progress' ? 'bg-blue-500' :
+                    bug.status === 'resolved' ? 'bg-green-500' :
+                    bug.status === 'closed' ? 'bg-gray-400' :
+                    'bg-purple-500'
+                  }`} />
 
-                      {bug.description && (
-                        <p className="text-sm text-gray-600 mb-3">{bug.description}</p>
-                      )}
-
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        <span className={`px-2 py-1 text-xs font-medium rounded ${getSeverityColor(bug.severity)}`}>
-                          {bug.severity}
-                        </span>
-                        <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusColor(bug.status)}`}>
-                          {bug.status}
-                        </span>
-                        {bug.environment && (
-                          <span className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
-                            {bug.environment}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-600">
-                        {bug.test_run && (
-                          <div>Test Run: <span className="font-medium">{bug.test_run.name}</span></div>
-                        )}
-                        {bug.test_case && (
-                          <div>Test Case: <span className="font-medium">{bug.test_case.title}</span></div>
-                        )}
-                        {bug.reporter && (
-                          <div className="flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            Reporter: <span className="font-medium">
-                              {bug.reporter.full_name || bug.reporter.email}
-                            </span>
+                  <CardContent className="flex-1 p-4">
+                    <div className="flex justify-between items-start gap-4">
+                      {/* Main Content */}
+                      <div className="flex-1 min-w-0">
+                        {/* Header: Title + Status */}
+                        <div className="flex items-start gap-3 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-semibold text-gray-900 truncate">
+                              {bug.title}
+                            </h3>
+                            {bug.description && (
+                              <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">
+                                {bug.description}
+                              </p>
+                            )}
                           </div>
-                        )}
-                        {bug.assignee && (
-                          <div className="flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            Assigned: <span className="font-medium">
-                              {bug.assignee.full_name || bug.assignee.email}
-                            </span>
-                          </div>
-                        )}
-                        <div>Created: {formatDateTime(bug.created_at)}</div>
-                        {bug.external_link && (
-                          <div>
-                            <a
-                              href={bug.external_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary-600 hover:underline flex items-center gap-1"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                              External Link
-                            </a>
-                          </div>
-                        )}
-                      </div>
-
-                      {bug.tags && bug.tags.length > 0 && (
-                        <div className="flex gap-1 mt-2">
-                          {bug.tags.map((tag, idx) => (
-                            <span key={idx} className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-                              {tag}
-                            </span>
-                          ))}
                         </div>
-                      )}
-                    </div>
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setViewingBug(bug)}
-                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded"
-                        title="View Details"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(bug)}
-                        className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(bug.id)}
-                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        {/* Info Grid */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                          {/* Status */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-gray-400">Status:</span>
+                            <span className={`font-medium ${
+                              bug.status === 'open' ? 'text-red-600' :
+                              bug.status === 'in_progress' ? 'text-blue-600' :
+                              bug.status === 'resolved' ? 'text-green-600' :
+                              bug.status === 'closed' ? 'text-gray-600' :
+                              'text-purple-600'
+                            }`}>
+                              {bug.status === 'in_progress' ? 'In Progress' :
+                               bug.status === 'wont_fix' ? "Won't Fix" :
+                               bug.status.charAt(0).toUpperCase() + bug.status.slice(1)}
+                            </span>
+                          </div>
+
+                          <span className="text-gray-300">•</span>
+
+                          {/* Severity */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-gray-400">Severity:</span>
+                            <span className={`font-medium ${
+                              bug.severity === 'critical' ? 'text-red-600' :
+                              bug.severity === 'high' ? 'text-orange-600' :
+                              bug.severity === 'medium' ? 'text-yellow-600' :
+                              'text-gray-600'
+                            }`}>
+                              {bug.severity.charAt(0).toUpperCase() + bug.severity.slice(1)}
+                            </span>
+                          </div>
+
+                          {bug.environment && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-gray-400">Env:</span>
+                                <span className="font-medium text-gray-700">{bug.environment}</span>
+                              </div>
+                            </>
+                          )}
+
+                          {bug.assignee && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <div className="flex items-center gap-1.5">
+                                <User className="w-3 h-3 text-gray-400" />
+                                <span className="font-medium text-gray-700">
+                                  {bug.assignee.full_name || bug.assignee.email?.split('@')[0]}
+                                </span>
+                              </div>
+                            </>
+                          )}
+
+                          <span className="text-gray-300">•</span>
+                          <span className="text-gray-400">{formatDateTime(bug.created_at)}</span>
+                        </div>
+
+                        {/* Tags */}
+                        {bug.tags && bug.tags.length > 0 && (
+                          <div className="flex gap-1 mt-2">
+                            {bug.tags.slice(0, 3).map((tag, idx) => (
+                              <span key={idx} className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded">
+                                {tag}
+                              </span>
+                            ))}
+                            {bug.tags.length > 3 && (
+                              <span className="px-1.5 py-0.5 text-xs text-gray-400">
+                                +{bug.tags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setViewingBug(bug)}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(bug)}
+                          className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(bug.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
+                  </CardContent>
+                </div>
               </Card>
             ))}
           </div>
@@ -682,10 +696,10 @@ export default function BugsPage() {
                   </div>
 
                   <Input
-                    label="External Link (Jira, GitHub, etc.)"
+                    label="Evidence (Google Drive Link)"
                     value={formData.external_link}
                     onChange={(e) => setFormData({ ...formData, external_link: e.target.value })}
-                    placeholder="https://..."
+                    placeholder="https://drive.google.com/..."
                   />
 
                   <Input
@@ -713,151 +727,169 @@ export default function BugsPage() {
         {viewingBug && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
             <Card className="w-full max-w-3xl my-8 max-h-[90vh] overflow-y-auto">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <Bug className="w-6 h-6 text-gray-600" />
-                    <CardTitle>Bug Details</CardTitle>
+              <CardHeader className="pb-0">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-gray-900">{viewingBug.title}</h2>
                   </div>
-                  <button onClick={() => setViewingBug(null)} className="text-gray-400 hover:text-gray-600">
+                  <button onClick={() => setViewingBug(null)} className="text-gray-400 hover:text-gray-600 ml-4">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Title & Badges */}
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-3">{viewingBug.title}</h2>
-                  <div className="flex flex-wrap gap-2">
-                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${getSeverityColor(viewingBug.severity)}`}>
-                      {viewingBug.severity.toUpperCase()}
-                    </span>
-                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(viewingBug.status)}`}>
-                      {viewingBug.status.replace('_', ' ').toUpperCase()}
-                    </span>
-                    {viewingBug.environment && (
-                      <span className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full">
-                        {viewingBug.environment}
-                      </span>
-                    )}
+              <CardContent className="space-y-6 pt-4">
+                {/* Status Info Grid */}
+                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Status</span>
+                    <p className={`text-sm font-semibold mt-1 ${
+                      viewingBug.status === 'open' ? 'text-red-600' :
+                      viewingBug.status === 'in_progress' ? 'text-blue-600' :
+                      viewingBug.status === 'resolved' ? 'text-green-600' :
+                      viewingBug.status === 'closed' ? 'text-gray-600' :
+                      'text-purple-600'
+                    }`}>
+                      {viewingBug.status === 'in_progress' ? 'In Progress' :
+                       viewingBug.status === 'wont_fix' ? "Won't Fix" :
+                       viewingBug.status.charAt(0).toUpperCase() + viewingBug.status.slice(1)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Severity</span>
+                    <p className={`text-sm font-semibold mt-1 ${
+                      viewingBug.severity === 'critical' ? 'text-red-600' :
+                      viewingBug.severity === 'high' ? 'text-orange-600' :
+                      viewingBug.severity === 'medium' ? 'text-yellow-600' :
+                      'text-gray-600'
+                    }`}>
+                      {viewingBug.severity.charAt(0).toUpperCase() + viewingBug.severity.slice(1)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Environment</span>
+                    <p className="text-sm font-semibold mt-1 text-gray-900">
+                      {viewingBug.environment || '-'}
+                    </p>
                   </div>
                 </div>
 
                 {/* Description */}
                 {viewingBug.description && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Description</h3>
-                    <p className="text-gray-900 whitespace-pre-wrap">{viewingBug.description}</p>
+                    <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">Description</h3>
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{viewingBug.description}</p>
                   </div>
                 )}
 
                 {/* Steps to Reproduce */}
                 {viewingBug.steps_to_reproduce && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Steps to Reproduce</h3>
-                    <p className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{viewingBug.steps_to_reproduce}</p>
+                    <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">Steps to Reproduce</h3>
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{viewingBug.steps_to_reproduce}</p>
                   </div>
                 )}
 
                 {/* Expected vs Actual */}
-                <div className="grid grid-cols-2 gap-4">
-                  {viewingBug.expected_behavior && (
+                {(viewingBug.expected_behavior || viewingBug.actual_behavior) && (
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500 mb-1">Expected Behavior</h3>
-                      <p className="text-gray-900 bg-green-50 p-3 rounded-lg">{viewingBug.expected_behavior}</p>
+                      <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">Expected Behavior</h3>
+                      <p className="text-sm text-gray-900 bg-green-50 p-3 rounded-lg min-h-[60px]">
+                        {viewingBug.expected_behavior || '-'}
+                      </p>
                     </div>
-                  )}
-                  {viewingBug.actual_behavior && (
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500 mb-1">Actual Behavior</h3>
-                      <p className="text-gray-900 bg-red-50 p-3 rounded-lg">{viewingBug.actual_behavior}</p>
+                      <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">Actual Behavior</h3>
+                      <p className="text-sm text-gray-900 bg-red-50 p-3 rounded-lg min-h-[60px]">
+                        {viewingBug.actual_behavior || '-'}
+                      </p>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Environment Details */}
                 {(viewingBug.browser || viewingBug.device || viewingBug.os) && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Environment Details</h3>
-                    <div className="grid grid-cols-3 gap-4 bg-gray-50 p-3 rounded-lg">
-                      {viewingBug.browser && (
-                        <div>
-                          <span className="text-xs text-gray-500">Browser</span>
-                          <p className="text-gray-900">{viewingBug.browser}</p>
-                        </div>
-                      )}
-                      {viewingBug.device && (
-                        <div>
-                          <span className="text-xs text-gray-500">Device</span>
-                          <p className="text-gray-900">{viewingBug.device}</p>
-                        </div>
-                      )}
-                      {viewingBug.os && (
-                        <div>
-                          <span className="text-xs text-gray-500">OS</span>
-                          <p className="text-gray-900">{viewingBug.os}</p>
-                        </div>
-                      )}
+                    <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">Environment Details</h3>
+                    <div className="grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                      <div>
+                        <span className="text-xs text-gray-500 uppercase tracking-wide">Browser</span>
+                        <p className="text-sm font-medium text-gray-900 mt-1">{viewingBug.browser || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500 uppercase tracking-wide">Device</span>
+                        <p className="text-sm font-medium text-gray-900 mt-1">{viewingBug.device || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500 uppercase tracking-wide">OS</span>
+                        <p className="text-sm font-medium text-gray-900 mt-1">{viewingBug.os || '-'}</p>
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {/* People */}
-                <div className="grid grid-cols-2 gap-4">
-                  {viewingBug.reporter && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <span className="text-xs text-gray-500">Reported by</span>
-                        <p className="text-sm font-medium text-gray-900">
-                          {viewingBug.reporter.full_name || viewingBug.reporter.email}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {viewingBug.assignee && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-green-600" />
-                      </div>
-                      <div>
-                        <span className="text-xs text-gray-500">Assigned to</span>
-                        <p className="text-sm font-medium text-gray-900">
-                          {viewingBug.assignee.full_name || viewingBug.assignee.email}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Related Test */}
-                {(viewingBug.test_run || viewingBug.test_case) && (
+                {(viewingBug.reporter || viewingBug.assignee) && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Related Test</h3>
-                    <div className="bg-gray-50 p-3 rounded-lg space-y-1">
-                      {viewingBug.test_run && (
-                        <p className="text-sm"><span className="text-gray-500">Test Run:</span> {viewingBug.test_run.name}</p>
-                      )}
-                      {viewingBug.test_case && (
-                        <p className="text-sm"><span className="text-gray-500">Test Case:</span> {viewingBug.test_case.title}</p>
-                      )}
+                    <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-3">People</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <User className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 uppercase tracking-wide">Reported by</span>
+                          <p className="text-sm font-medium text-gray-900">
+                            {viewingBug.reporter?.full_name || viewingBug.reporter?.email || 'Unknown'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <User className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 uppercase tracking-wide">Assigned to</span>
+                          <p className="text-sm font-medium text-gray-900">
+                            {viewingBug.assignee?.full_name || viewingBug.assignee?.email || 'Unassigned'}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* External Link */}
+                {/* Related Test */}
+                {(viewingBug.test_run || viewingBug.test_case) && (
+                  <div>
+                    <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">Related Test</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-xs text-gray-500 uppercase tracking-wide">Test Run</span>
+                          <p className="text-sm font-medium text-gray-900 mt-1">{viewingBug.test_run?.name || '-'}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 uppercase tracking-wide">Test Case</span>
+                          <p className="text-sm font-medium text-gray-900 mt-1">{viewingBug.test_case?.title || '-'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Evidence */}
                 {viewingBug.external_link && (
                   <div>
+                    <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">Evidence</h3>
                     <a
                       href={viewingBug.external_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-primary-600 hover:underline"
+                      className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 hover:underline bg-primary-50 px-3 py-2 rounded-lg"
                     >
                       <ExternalLink className="w-4 h-4" />
-                      View External Link
+                      View Evidence on Google Drive
                     </a>
                   </div>
                 )}
@@ -865,10 +897,10 @@ export default function BugsPage() {
                 {/* Tags */}
                 {viewingBug.tags && viewingBug.tags.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Tags</h3>
+                    <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">Tags</h3>
                     <div className="flex flex-wrap gap-2">
                       {viewingBug.tags.map((tag, idx) => (
-                        <span key={idx} className="px-2 py-1 text-sm bg-gray-100 text-gray-700 rounded">
+                        <span key={idx} className="px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
                           {tag}
                         </span>
                       ))}
@@ -879,8 +911,8 @@ export default function BugsPage() {
                 {/* Comments Section */}
                 <div className="pt-4 border-t">
                   <div className="flex items-center gap-2 mb-4">
-                    <MessageSquare className="w-5 h-5 text-gray-500" />
-                    <h3 className="text-sm font-medium text-gray-700">
+                    <MessageSquare className="w-4 h-4 text-gray-400" />
+                    <h3 className="text-xs text-gray-500 uppercase tracking-wide">
                       Comments ({comments.length})
                     </h3>
                   </div>
@@ -936,9 +968,19 @@ export default function BugsPage() {
                 </div>
 
                 {/* Timestamps */}
-                <div className="text-sm text-gray-500 pt-4 border-t">
-                  <p>Created: {formatDateTime(viewingBug.created_at)}</p>
-                  {viewingBug.resolved_at && <p>Resolved: {formatDateTime(viewingBug.resolved_at)}</p>}
+                <div className="pt-4 border-t">
+                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-gray-500">
+                    <div>
+                      <span className="uppercase tracking-wide">Created:</span>
+                      <span className="ml-1 text-gray-700">{formatDateTime(viewingBug.created_at)}</span>
+                    </div>
+                    {viewingBug.resolved_at && (
+                      <div>
+                        <span className="uppercase tracking-wide">Resolved:</span>
+                        <span className="ml-1 text-gray-700">{formatDateTime(viewingBug.resolved_at)}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Actions */}
