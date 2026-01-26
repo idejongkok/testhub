@@ -446,6 +446,32 @@ export interface Database {
           updated_at?: string
         }
       }
+      bug_comments: {
+        Row: {
+          id: string
+          bug_id: string
+          user_id: string
+          content: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          bug_id: string
+          user_id: string
+          content: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          bug_id?: string
+          user_id?: string
+          content?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

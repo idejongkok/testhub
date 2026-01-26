@@ -5,7 +5,8 @@ import Layout from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Plus, X, Edit2, Trash2, Bug, ExternalLink, User } from 'lucide-react'
+import { Plus, X, Edit2, Trash2, Bug, ExternalLink, User, Eye, MessageSquare, Send } from 'lucide-react'
+import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Database, BugStatus, BugSeverity } from '@/types/database'
 import { formatDateTime } from '@/lib/utils'
@@ -17,16 +18,37 @@ type BugRow = Database['public']['Tables']['bugs']['Row'] & {
   assignee?: { email: string; full_name: string | null }
 }
 
+type UserProfile = {
+  id: string
+  email: string
+  full_name: string | null
+}
+
+type BugComment = {
+  id: string
+  bug_id: string
+  user_id: string
+  content: string
+  created_at: string
+  user: { email: string; full_name: string | null }
+}
+
 export default function BugsPage() {
   const { currentProject } = useProjectStore()
+  const { user } = useAuthStore()
   const location = useLocation()
   const [bugs, setBugs] = useState<BugRow[]>([])
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [viewingBug, setViewingBug] = useState<BugRow | null>(null)
   const [editingBug, setEditingBug] = useState<BugRow | null>(null)
   const [statusFilter, setStatusFilter] = useState<BugStatus | 'all'>('all')
   const [severityFilter, setSeverityFilter] = useState<BugSeverity | 'all'>('all')
   const [prefillData, setPrefillData] = useState<any>(null)
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([])
+  const [comments, setComments] = useState<BugComment[]>([])
+  const [newComment, setNewComment] = useState('')
+  const [loadingComments, setLoadingComments] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -45,13 +67,61 @@ export default function BugsPage() {
     test_run_id: '',
     test_case_id: '',
     test_run_result_id: '',
+    assigned_to: '',
   })
 
   useEffect(() => {
     if (currentProject) {
       fetchBugs()
+      fetchAllUsers()
     }
   }, [currentProject])
+
+  useEffect(() => {
+    if (viewingBug) {
+      fetchComments(viewingBug.id)
+    } else {
+      setComments([])
+    }
+  }, [viewingBug])
+
+  const fetchAllUsers = async () => {
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('id, email, full_name')
+      .order('full_name')
+    if (data) {
+      setAllUsers(data as UserProfile[])
+    }
+  }
+
+  const fetchComments = async (bugId: string) => {
+    setLoadingComments(true)
+    const { data } = await supabase
+      .from('bug_comments')
+      .select('*, user:user_profiles(email, full_name)')
+      .eq('bug_id', bugId)
+      .order('created_at', { ascending: true })
+    if (data) {
+      setComments(data as BugComment[])
+    }
+    setLoadingComments(false)
+  }
+
+  const handleAddComment = async () => {
+    if (!viewingBug || !newComment.trim() || !user) return
+
+    const { error } = await (supabase.from('bug_comments') as any).insert({
+      bug_id: viewingBug.id,
+      user_id: user.id,
+      content: newComment.trim()
+    })
+
+    if (!error) {
+      setNewComment('')
+      fetchComments(viewingBug.id)
+    }
+  }
 
   // Handle prefilled data from navigation state
   useEffect(() => {
@@ -99,7 +169,7 @@ export default function BugsPage() {
     e.preventDefault()
     if (!currentProject) return
 
-    const payload = {
+    const payload: any = {
       project_id: currentProject.id,
       title: formData.title,
       description: formData.description || null,
@@ -117,11 +187,17 @@ export default function BugsPage() {
       test_run_id: formData.test_run_id || null,
       test_case_id: formData.test_case_id || null,
       test_run_result_id: formData.test_run_result_id || null,
+      assigned_to: formData.assigned_to || null,
+    }
+
+    // Auto-set reporter when creating new bug
+    if (!editingBug && user) {
+      payload.reported_by = user.id
     }
 
     if (editingBug) {
-      const { error } = await supabase
-        .from('bugs')
+      const { error } = await (supabase
+        .from('bugs') as any)
         .update(payload)
         .eq('id', editingBug.id)
 
@@ -130,7 +206,9 @@ export default function BugsPage() {
         resetForm()
       }
     } else {
-      const { error } = await supabase.from('bugs').insert([payload])
+      const { error } = await (supabase
+        .from('bugs') as any)
+        .insert(payload)
 
       if (!error) {
         fetchBugs()
@@ -155,6 +233,10 @@ export default function BugsPage() {
       os: bug.os || '',
       external_link: bug.external_link || '',
       tags: bug.tags ? bug.tags.join(', ') : '',
+      assigned_to: bug.assigned_to || '',
+      test_run_id: bug.test_run_id || '',
+      test_case_id: bug.test_case_id || '',
+      test_run_result_id: bug.test_run_result_id || '',
     })
     setShowModal(true)
   }
@@ -187,6 +269,7 @@ export default function BugsPage() {
       test_run_id: '',
       test_case_id: '',
       test_run_result_id: '',
+      assigned_to: '',
     })
   }
 
@@ -400,14 +483,23 @@ export default function BugsPage() {
 
                     <div className="flex gap-2">
                       <button
+                        onClick={() => setViewingBug(bug)}
+                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded"
+                        title="View Details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleEdit(bug)}
                         className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded"
+                        title="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(bug.id)}
                         className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
+                        title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -454,7 +546,7 @@ export default function BugsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Severity
@@ -485,6 +577,24 @@ export default function BugsPage() {
                         <option value="resolved">Resolved</option>
                         <option value="closed">Closed</option>
                         <option value="wont_fix">Won't Fix</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Assign To
+                      </label>
+                      <select
+                        value={formData.assigned_to}
+                        onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      >
+                        <option value="">Unassigned</option>
+                        {allUsers.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.full_name || user.email}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -531,12 +641,21 @@ export default function BugsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label="Environment"
-                      value={formData.environment}
-                      onChange={(e) => setFormData({ ...formData, environment: e.target.value })}
-                      placeholder="staging, production, etc."
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Environment
+                      </label>
+                      <select
+                        value={formData.environment}
+                        onChange={(e) => setFormData({ ...formData, environment: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      >
+                        <option value="">Select Environment</option>
+                        <option value="Staging">Staging</option>
+                        <option value="Preproduction">Preproduction</option>
+                        <option value="Production">Production</option>
+                      </select>
+                    </div>
 
                     <Input
                       label="Browser"
@@ -585,6 +704,256 @@ export default function BugsPage() {
                     </Button>
                   </div>
                 </form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* View Bug Detail Modal */}
+        {viewingBug && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <Card className="w-full max-w-3xl my-8 max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <Bug className="w-6 h-6 text-gray-600" />
+                    <CardTitle>Bug Details</CardTitle>
+                  </div>
+                  <button onClick={() => setViewingBug(null)} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Title & Badges */}
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-3">{viewingBug.title}</h2>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${getSeverityColor(viewingBug.severity)}`}>
+                      {viewingBug.severity.toUpperCase()}
+                    </span>
+                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(viewingBug.status)}`}>
+                      {viewingBug.status.replace('_', ' ').toUpperCase()}
+                    </span>
+                    {viewingBug.environment && (
+                      <span className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full">
+                        {viewingBug.environment}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Description */}
+                {viewingBug.description && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Description</h3>
+                    <p className="text-gray-900 whitespace-pre-wrap">{viewingBug.description}</p>
+                  </div>
+                )}
+
+                {/* Steps to Reproduce */}
+                {viewingBug.steps_to_reproduce && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Steps to Reproduce</h3>
+                    <p className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{viewingBug.steps_to_reproduce}</p>
+                  </div>
+                )}
+
+                {/* Expected vs Actual */}
+                <div className="grid grid-cols-2 gap-4">
+                  {viewingBug.expected_behavior && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-1">Expected Behavior</h3>
+                      <p className="text-gray-900 bg-green-50 p-3 rounded-lg">{viewingBug.expected_behavior}</p>
+                    </div>
+                  )}
+                  {viewingBug.actual_behavior && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-1">Actual Behavior</h3>
+                      <p className="text-gray-900 bg-red-50 p-3 rounded-lg">{viewingBug.actual_behavior}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Environment Details */}
+                {(viewingBug.browser || viewingBug.device || viewingBug.os) && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Environment Details</h3>
+                    <div className="grid grid-cols-3 gap-4 bg-gray-50 p-3 rounded-lg">
+                      {viewingBug.browser && (
+                        <div>
+                          <span className="text-xs text-gray-500">Browser</span>
+                          <p className="text-gray-900">{viewingBug.browser}</p>
+                        </div>
+                      )}
+                      {viewingBug.device && (
+                        <div>
+                          <span className="text-xs text-gray-500">Device</span>
+                          <p className="text-gray-900">{viewingBug.device}</p>
+                        </div>
+                      )}
+                      {viewingBug.os && (
+                        <div>
+                          <span className="text-xs text-gray-500">OS</span>
+                          <p className="text-gray-900">{viewingBug.os}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* People */}
+                <div className="grid grid-cols-2 gap-4">
+                  {viewingBug.reporter && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500">Reported by</span>
+                        <p className="text-sm font-medium text-gray-900">
+                          {viewingBug.reporter.full_name || viewingBug.reporter.email}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {viewingBug.assignee && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500">Assigned to</span>
+                        <p className="text-sm font-medium text-gray-900">
+                          {viewingBug.assignee.full_name || viewingBug.assignee.email}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Related Test */}
+                {(viewingBug.test_run || viewingBug.test_case) && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Related Test</h3>
+                    <div className="bg-gray-50 p-3 rounded-lg space-y-1">
+                      {viewingBug.test_run && (
+                        <p className="text-sm"><span className="text-gray-500">Test Run:</span> {viewingBug.test_run.name}</p>
+                      )}
+                      {viewingBug.test_case && (
+                        <p className="text-sm"><span className="text-gray-500">Test Case:</span> {viewingBug.test_case.title}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* External Link */}
+                {viewingBug.external_link && (
+                  <div>
+                    <a
+                      href={viewingBug.external_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-primary-600 hover:underline"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      View External Link
+                    </a>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {viewingBug.tags && viewingBug.tags.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Tags</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {viewingBug.tags.map((tag, idx) => (
+                        <span key={idx} className="px-2 py-1 text-sm bg-gray-100 text-gray-700 rounded">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Comments Section */}
+                <div className="pt-4 border-t">
+                  <div className="flex items-center gap-2 mb-4">
+                    <MessageSquare className="w-5 h-5 text-gray-500" />
+                    <h3 className="text-sm font-medium text-gray-700">
+                      Comments ({comments.length})
+                    </h3>
+                  </div>
+
+                  {/* Comments List */}
+                  <div className="space-y-3 max-h-64 overflow-y-auto mb-4">
+                    {loadingComments ? (
+                      <p className="text-sm text-gray-500">Loading comments...</p>
+                    ) : comments.length === 0 ? (
+                      <p className="text-sm text-gray-500">No comments yet</p>
+                    ) : (
+                      comments.map((comment) => (
+                        <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-medium text-primary-700">
+                                {(comment.user?.full_name || comment.user?.email)?.[0]?.toUpperCase()}
+                              </span>
+                            </div>
+                            <span className="text-sm font-medium text-gray-900">
+                              {comment.user?.full_name || comment.user?.email}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {formatDateTime(comment.created_at)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap pl-8">
+                            {comment.content}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Add Comment */}
+                  <div className="flex gap-2">
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Write a comment..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none"
+                      rows={2}
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleAddComment}
+                      disabled={!newComment.trim()}
+                      className="self-end"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Timestamps */}
+                <div className="text-sm text-gray-500 pt-4 border-t">
+                  <p>Created: {formatDateTime(viewingBug.created_at)}</p>
+                  {viewingBug.resolved_at && <p>Resolved: {formatDateTime(viewingBug.resolved_at)}</p>}
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button variant="secondary" onClick={() => setViewingBug(null)}>
+                    Close
+                  </Button>
+                  <Button onClick={() => {
+                    handleEdit(viewingBug)
+                    setViewingBug(null)
+                  }}>
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit Bug
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
