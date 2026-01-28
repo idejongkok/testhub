@@ -5,7 +5,9 @@ import Layout from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Plus, X, Edit2, Trash2, Bug, ExternalLink, User, Eye, MessageSquare, Send } from 'lucide-react'
+import { Plus, X, Edit2, Trash2, Bug, ExternalLink, User, Eye, MessageSquare, Send, Ticket, Settings, Loader2 } from 'lucide-react'
+import { jiraService } from '@/lib/services/jiraService'
+import JiraConfigModal from '@/components/JiraConfigModal'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Database, BugStatus, BugSeverity } from '@/types/database'
@@ -50,6 +52,9 @@ export default function BugsPage() {
   const [newComment, setNewComment] = useState('')
   const [loadingComments, setLoadingComments] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [creatingJiraFor, setCreatingJiraFor] = useState<string | null>(null)
+  const [jiraConfigured, setJiraConfigured] = useState(false)
+  const [showJiraConfig, setShowJiraConfig] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -75,8 +80,38 @@ export default function BugsPage() {
     if (currentProject) {
       fetchBugs()
       fetchAllUsers()
+      checkJiraConfig()
     }
   }, [currentProject])
+
+  const checkJiraConfig = async () => {
+    if (!currentProject) return
+    const configured = await jiraService.isConfigured(currentProject.id)
+    setJiraConfigured(configured)
+  }
+
+  const handleCreateJiraTicket = async (bug: BugRow) => {
+    if (!currentProject) return
+    if (bug.jira_ticket_key) {
+      alert('JIRA ticket already exists for this bug')
+      return
+    }
+
+    setCreatingJiraFor(bug.id)
+    try {
+      const result = await jiraService.createTicket(bug, currentProject.id)
+      if (result.success) {
+        alert(`JIRA ticket ${result.ticketKey} created successfully!`)
+        fetchBugs()
+      } else {
+        alert(result.error || 'Failed to create JIRA ticket')
+      }
+    } catch (error) {
+      alert('An unexpected error occurred')
+    } finally {
+      setCreatingJiraFor(null)
+    }
+  }
 
   useEffect(() => {
     if (viewingBug) {
@@ -317,10 +352,16 @@ export default function BugsPage() {
               <span className="text-gray-600">Total: {stats.total}</span>
             </div>
           </div>
-          <Button onClick={() => setShowModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Report Bug
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={() => setShowJiraConfig(true)} title="JIRA Settings">
+              <Settings className="w-4 h-4 mr-2" />
+              JIRA
+            </Button>
+            <Button onClick={() => setShowModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Report Bug
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -516,6 +557,33 @@ export default function BugsPage() {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
+                        {/* JIRA Button - Only for Production bugs */}
+                        {bug.environment === 'Production' && (
+                          bug.jira_ticket_key ? (
+                            <a
+                              href={bug.jira_ticket_url || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title={`JIRA: ${bug.jira_ticket_key}`}
+                            >
+                              <Ticket className="w-4 h-4" />
+                            </a>
+                          ) : (
+                            <button
+                              onClick={() => handleCreateJiraTicket(bug)}
+                              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title={jiraConfigured ? "Create JIRA Ticket" : "Configure JIRA first"}
+                              disabled={creatingJiraFor === bug.id || !jiraConfigured}
+                            >
+                              {creatingJiraFor === bug.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Ticket className="w-4 h-4" />
+                              )}
+                            </button>
+                          )
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -723,6 +791,16 @@ export default function BugsPage() {
           </div>
         )}
 
+        {/* JIRA Config Modal */}
+        {showJiraConfig && currentProject && (
+          <JiraConfigModal
+            projectId={currentProject.id}
+            projectName={currentProject.name}
+            onClose={() => setShowJiraConfig(false)}
+            onSaved={() => checkJiraConfig()}
+          />
+        )}
+
         {/* View Bug Detail Modal */}
         {viewingBug && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -891,6 +969,28 @@ export default function BugsPage() {
                       <ExternalLink className="w-4 h-4" />
                       View Evidence on Google Drive
                     </a>
+                  </div>
+                )}
+
+                {/* JIRA Ticket */}
+                {viewingBug.jira_ticket_key && (
+                  <div>
+                    <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">JIRA Ticket</h3>
+                    <a
+                      href={viewingBug.jira_ticket_url || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline bg-blue-50 px-3 py-2 rounded-lg"
+                    >
+                      <Ticket className="w-4 h-4" />
+                      {viewingBug.jira_ticket_key}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                    {viewingBug.jira_created_at && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Created: {formatDateTime(viewingBug.jira_created_at)}
+                      </p>
+                    )}
                   </div>
                 )}
 

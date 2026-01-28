@@ -388,6 +388,9 @@ export interface Database {
           resolved_by: string | null
           resolved_at: string | null
           tags: string[] | null
+          jira_ticket_key: string | null
+          jira_ticket_url: string | null
+          jira_created_at: string | null
           created_at: string
           updated_at: string
         }
@@ -415,6 +418,9 @@ export interface Database {
           resolved_by?: string | null
           resolved_at?: string | null
           tags?: string[] | null
+          jira_ticket_key?: string | null
+          jira_ticket_url?: string | null
+          jira_created_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -442,6 +448,9 @@ export interface Database {
           resolved_by?: string | null
           resolved_at?: string | null
           tags?: string[] | null
+          jira_ticket_key?: string | null
+          jira_ticket_url?: string | null
+          jira_created_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -468,6 +477,47 @@ export interface Database {
           bug_id?: string
           user_id?: string
           content?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      jira_configurations: {
+        Row: {
+          id: string
+          project_id: string
+          jira_base_url: string
+          jira_project_key: string
+          jira_email: string
+          jira_api_token: string
+          default_issue_type: string
+          enabled: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          jira_base_url: string
+          jira_project_key: string
+          jira_email: string
+          jira_api_token: string
+          default_issue_type?: string
+          enabled?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          jira_base_url?: string
+          jira_project_key?: string
+          jira_email?: string
+          jira_api_token?: string
+          default_issue_type?: string
+          enabled?: boolean
+          created_by?: string | null
           created_at?: string
           updated_at?: string
         }
