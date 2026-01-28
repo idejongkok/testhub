@@ -388,6 +388,8 @@ export interface Database {
           resolved_by: string | null
           resolved_at: string | null
           tags: string[] | null
+          feature: string | null
+          platform: string | null
           jira_ticket_key: string | null
           jira_ticket_url: string | null
           jira_created_at: string | null
@@ -418,6 +420,8 @@ export interface Database {
           resolved_by?: string | null
           resolved_at?: string | null
           tags?: string[] | null
+          feature?: string | null
+          platform?: string | null
           jira_ticket_key?: string | null
           jira_ticket_url?: string | null
           jira_created_at?: string | null
@@ -448,6 +452,8 @@ export interface Database {
           resolved_by?: string | null
           resolved_at?: string | null
           tags?: string[] | null
+          feature?: string | null
+          platform?: string | null
           jira_ticket_key?: string | null
           jira_ticket_url?: string | null
           jira_created_at?: string | null

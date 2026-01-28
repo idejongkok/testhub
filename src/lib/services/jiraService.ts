@@ -77,9 +77,12 @@ export const jiraService = {
         expected_behavior: bug.expected_behavior,
         actual_behavior: bug.actual_behavior,
         environment: bug.environment,
+        feature: bug.feature,
+        platform: bug.platform,
         browser: bug.browser,
         device: bug.device,
         os: bug.os,
+        external_link: bug.external_link,
         tags: bug.tags,
       }
 

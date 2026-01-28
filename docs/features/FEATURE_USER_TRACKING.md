@@ -1,7 +1,7 @@
 # Feature: User Tracking for Test Cases and Executions
 
 ## Overview
-Fitur ini menambahkan tracking untuk:
+Feature ini menambahkan tracking untuk:
 1. **Creator** - User yang membuat test case
 2. **Executor** - User yang melakukan execution testing pada test run
 

@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-Aplikasi sekarang support **Tree Structure** untuk test cases seperti Qase.io dengan fitur:
+Aplikasi sekarang support **Tree Structure** untuk test cases seperti Qase.io dengan Feature:
 - ✅ **Suites/Folders** - Organize test cases dalam folders
 - ✅ **Nested Folders** - Support unlimited depth
 - ✅ **Drag & Drop** - Move test cases antar suites

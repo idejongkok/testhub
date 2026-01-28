@@ -10,9 +10,12 @@ interface JiraBugPayload {
   expected_behavior: string | null
   actual_behavior: string | null
   environment: string | null
+  feature: string | null
+  platform: string | null
   browser: string | null
   device: string | null
   os: string | null
+  external_link: string | null
   tags: string[] | null
 }
 
@@ -124,6 +127,16 @@ function buildJiraDescription(bug: JiraBugPayload): object {
     addPanel('error', '❌ Actual Behavior', bug.actual_behavior)
   }
 
+  // Feature & Platform - Info (blue)
+  const featurePlatformDetails = [
+    bug.feature && `Feature: ${bug.feature}`,
+    bug.platform && `Platform: ${bug.platform}`,
+  ].filter(Boolean) as string[]
+
+  if (featurePlatformDetails.length > 0) {
+    addPanelWithList('info', '🎯 Feature & Platform', featurePlatformDetails)
+  }
+
   // Environment Details - Note (purple)
   const envDetails = [
     bug.environment && `Environment: ${bug.environment}`,
@@ -134,6 +147,21 @@ function buildJiraDescription(bug: JiraBugPayload): object {
 
   if (envDetails.length > 0) {
     addPanelWithList('note', '🖥️ Environment Details', envDetails)
+  }
+
+  // Evidence Link
+  if (bug.external_link) {
+    content.push({
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: '📎 Evidence: ', marks: [{ type: 'strong' }] },
+        {
+          type: 'text',
+          text: bug.external_link,
+          marks: [{ type: 'link', attrs: { href: bug.external_link } }]
+        }
+      ]
+    })
   }
 
   // Tags
@@ -155,7 +183,7 @@ function buildJiraDescription(bug: JiraBugPayload): object {
     type: 'paragraph',
     content: [{
       type: 'text',
-      text: 'Created from QA Test Management',
+      text: 'Created from TestHub',
       marks: [{ type: 'em' }]
     }]
   })

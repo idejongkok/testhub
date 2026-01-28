@@ -65,6 +65,8 @@ export default function BugsPage() {
     expected_behavior: '',
     actual_behavior: '',
     environment: '',
+    feature: '',
+    platform: '',
     browser: '',
     device: '',
     os: '',
@@ -215,6 +217,8 @@ export default function BugsPage() {
       expected_behavior: formData.expected_behavior || null,
       actual_behavior: formData.actual_behavior || null,
       environment: formData.environment || null,
+      feature: formData.feature || null,
+      platform: formData.platform || null,
       browser: formData.browser || null,
       device: formData.device || null,
       os: formData.os || null,
@@ -264,6 +268,8 @@ export default function BugsPage() {
       expected_behavior: bug.expected_behavior || '',
       actual_behavior: bug.actual_behavior || '',
       environment: bug.environment || '',
+      feature: bug.feature || '',
+      platform: bug.platform || '',
       browser: bug.browser || '',
       device: bug.device || '',
       os: bug.os || '',
@@ -297,6 +303,8 @@ export default function BugsPage() {
       expected_behavior: '',
       actual_behavior: '',
       environment: '',
+      feature: '',
+      platform: '',
       browser: '',
       device: '',
       os: '',
@@ -497,6 +505,26 @@ export default function BugsPage() {
                               <div className="flex items-center gap-1.5">
                                 <span className="text-gray-400">Env:</span>
                                 <span className="font-medium text-gray-700">{bug.environment}</span>
+                              </div>
+                            </>
+                          )}
+
+                          {bug.feature && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-gray-400">Feature:</span>
+                                <span className="font-medium text-gray-700">{bug.feature}</span>
+                              </div>
+                            </>
+                          )}
+
+                          {bug.platform && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-gray-400">Platform:</span>
+                                <span className="font-medium text-gray-700">{bug.platform}</span>
                               </div>
                             </>
                           )}
@@ -763,6 +791,22 @@ export default function BugsPage() {
                     />
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Feature"
+                      value={formData.feature}
+                      onChange={(e) => setFormData({ ...formData, feature: e.target.value })}
+                      placeholder="login, bulk order, checkout, etc."
+                    />
+
+                    <Input
+                      label="Platform"
+                      value={formData.platform}
+                      onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
+                      placeholder="web, internal dashboard, android, etc."
+                    />
+                  </div>
+
                   <Input
                     label="Evidence (Google Drive Link)"
                     value={formData.external_link}
@@ -850,6 +894,24 @@ export default function BugsPage() {
                     </p>
                   </div>
                 </div>
+
+                {/* Feature & Platform */}
+                {(viewingBug.feature || viewingBug.platform) && (
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <span className="text-xs text-gray-500 uppercase tracking-wide">Feature</span>
+                      <p className="text-sm font-semibold mt-1 text-gray-900">
+                        {viewingBug.feature || '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-500 uppercase tracking-wide">Platform</span>
+                      <p className="text-sm font-semibold mt-1 text-gray-900">
+                        {viewingBug.platform || '-'}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Description */}
                 {viewingBug.description && (

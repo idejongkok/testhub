@@ -238,7 +238,7 @@ Past:     Sprint 22 Testing (Completed - Gray)
 
 ## Feedback
 
-Kalau ada bug atau request fitur tambahan, let me know! 🚀
+Kalau ada bug atau request Feature tambahan, let me know! 🚀
 
 **Tested on:**
 - ✅ Chrome 120+

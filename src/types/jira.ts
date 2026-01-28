@@ -34,9 +34,12 @@ export interface JiraBugPayload {
   expected_behavior: string | null
   actual_behavior: string | null
   environment: string | null
+  feature: string | null
+  platform: string | null
   browser: string | null
   device: string | null
   os: string | null
+  external_link: string | null
   tags: string[] | null
 }
 

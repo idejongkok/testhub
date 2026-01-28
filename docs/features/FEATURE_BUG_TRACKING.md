@@ -1,7 +1,7 @@
 # Feature: Bug/Issue Tracking
 
 ## Overview
-Fitur ini menambahkan kemampuan untuk melacak bugs dan issues yang ditemukan selama testing, baik yang terkait dengan test case maupun yang ditemukan secara ad-hoc.
+Feature ini menambahkan kemampuan untuk melacak bugs dan issues yang ditemukan selama testing, baik yang terkait dengan test case maupun yang ditemukan secara ad-hoc.
 
 ## Features
 

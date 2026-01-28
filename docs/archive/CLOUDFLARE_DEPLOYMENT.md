@@ -95,7 +95,7 @@ Setelah setup awal:
 ## Next Steps
 
 Setelah deploy berhasil:
-1. Test semua fitur aplikasi
+1. Test semua Feature aplikasi
 2. Setup custom domain (opsional)
 3. Configure analytics
 4. Setup error tracking (Sentry, LogRocket, dll)

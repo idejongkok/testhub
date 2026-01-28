@@ -1,7 +1,7 @@
 # Feature: Test Run Management - Individual & Bulk Actions
 
 ## Overview
-Fitur ini menambahkan kemampuan untuk manage test cases dalam Test Run dengan actions individual dan bulk, serta add/remove test cases.
+Feature ini menambahkan kemampuan untuk manage test cases dalam Test Run dengan actions individual dan bulk, serta add/remove test cases.
 
 ## Features
 
