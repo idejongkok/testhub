@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { X, ChevronDown, ChevronRight, Folder, CheckSquare, Square } from 'lucide-react'
+import { X, ChevronDown, ChevronRight, Folder, CheckSquare, Square, Link2, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
 
@@ -19,13 +19,19 @@ interface ManageCasesBySuiteProps {
   selectedCaseIds: string[]
   onClose: () => void
   onSave: (caseIds: string[]) => void
+  title?: string
+  onCopyLink?: () => void
+  linkCopied?: boolean
 }
 
 export default function ManageCasesBySuite({
   projectId,
   selectedCaseIds,
   onClose,
-  onSave
+  onSave,
+  title,
+  onCopyLink,
+  linkCopied
 }: ManageCasesBySuiteProps) {
   const [suiteGroups, setSuiteGroups] = useState<SuiteWithCases[]>([])
   const [tempSelectedIds, setTempSelectedIds] = useState<string[]>(selectedCaseIds)
@@ -127,10 +133,32 @@ export default function ManageCasesBySuite({
       <Card className="w-full max-w-4xl max-h-[80vh] flex flex-col">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Manage Test Cases</CardTitle>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <X className="w-5 h-5" />
-            </button>
+            <CardTitle>{title || 'Manage Test Cases'}</CardTitle>
+            <div className="flex items-center gap-2">
+              {onCopyLink && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={onCopyLink}
+                  className="flex items-center gap-1"
+                >
+                  {linkCopied ? (
+                    <>
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-green-600">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="w-4 h-4" />
+                      Copy Link
+                    </>
+                  )}
+                </Button>
+              )}
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           <p className="text-sm text-gray-600 mt-2">
             Selected: {tempSelectedIds.length} test case(s)

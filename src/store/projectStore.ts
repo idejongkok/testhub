@@ -18,7 +18,7 @@ interface ProjectState {
 export const useProjectStore = create<ProjectState>((set, get) => ({
   projects: [],
   currentProject: null,
-  loading: false,
+  loading: true, // Start with loading true to prevent premature redirect
 
   fetchProjects: async () => {
     set({ loading: true })

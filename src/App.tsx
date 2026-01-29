@@ -27,19 +27,25 @@ const PageLoader = () => (
 )
 
 function App() {
-  const { initialize } = useAuthStore()
+  const { initialize, user, loading: authLoading } = useAuthStore()
   const { fetchProjects } = useProjectStore()
 
   useEffect(() => {
     initialize()
   }, [initialize])
 
+  // Fetch projects when user is authenticated
   useEffect(() => {
-    const { user } = useAuthStore.getState()
+    // Don't do anything while auth is still loading
+    if (authLoading) return
+
     if (user) {
       fetchProjects()
+    } else {
+      // Reset loading state only after auth confirms no user (logout)
+      useProjectStore.setState({ loading: false, projects: [], currentProject: null })
     }
-  }, [fetchProjects])
+  }, [user, authLoading, fetchProjects])
 
   return (
     <BrowserRouter>

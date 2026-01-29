@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, List } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, List, X } from 'lucide-react'
 import { Database } from '@/types/database'
 import { formatDate } from '@/lib/utils'
 
@@ -12,12 +12,50 @@ interface TestPlanCalendarProps {
   onSelectPlan: (plan: TestPlan) => void
 }
 
+interface DayPopover {
+  date: Date
+  plans: TestPlan[]
+  position: { x: number; y: number }
+}
+
 export default function TestPlanCalendar({ testPlans, onSelectPlan }: TestPlanCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [view, setView] = useState<'calendar' | 'timeline'>('timeline')
+  const [dayPopover, setDayPopover] = useState<DayPopover | null>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December']
+
+  // Close popover when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        setDayPopover(null)
+      }
+    }
+
+    if (dayPopover) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [dayPopover])
+
+  const handleShowMorePlans = (e: React.MouseEvent, date: Date, plans: TestPlan[]) => {
+    e.stopPropagation()
+    const rect = (e.target as HTMLElement).getBoundingClientRect()
+    setDayPopover({
+      date,
+      plans,
+      position: {
+        x: rect.left,
+        y: rect.bottom + 4
+      }
+    })
+  }
 
   const previousMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))
@@ -242,9 +280,12 @@ export default function TestPlanCalendar({ testPlans, onSelectPlan }: TestPlanCa
                       </div>
                     ))}
                     {dayPlans.length > 2 && (
-                      <div className="text-xs text-gray-500">
+                      <button
+                        onClick={(e) => handleShowMorePlans(e, date, dayPlans)}
+                        className="text-xs text-primary-600 hover:text-primary-800 hover:underline font-medium cursor-pointer"
+                      >
                         +{dayPlans.length - 2} more
-                      </div>
+                      </button>
                     )}
                   </div>
                 )}
@@ -297,6 +338,85 @@ export default function TestPlanCalendar({ testPlans, onSelectPlan }: TestPlanCa
 
       {/* View */}
       {view === 'timeline' ? renderTimeline() : renderCalendar()}
+
+      {/* Day Plans Popover */}
+      {dayPopover && (
+        <div
+          ref={popoverRef}
+          className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[280px] max-w-[350px]"
+          style={{
+            left: Math.min(dayPopover.position.x, window.innerWidth - 360),
+            top: Math.min(dayPopover.position.y, window.innerHeight - 300)
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50 rounded-t-lg">
+            <div>
+              <h4 className="font-semibold text-gray-900">
+                {dayPopover.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </h4>
+              <p className="text-xs text-gray-500">{dayPopover.plans.length} test plan(s)</p>
+            </div>
+            <button
+              onClick={() => setDayPopover(null)}
+              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Plans List */}
+          <div className="max-h-[250px] overflow-y-auto p-2">
+            <div className="space-y-2">
+              {dayPopover.plans.map(plan => {
+                const start = plan.start_date ? new Date(plan.start_date) : null
+                const end = plan.end_date ? new Date(plan.end_date) : null
+                const today = new Date()
+                const isActive = start && end && today >= start && today <= end
+                const isPast = end && today > end
+
+                return (
+                  <div
+                    key={plan.id}
+                    onClick={() => {
+                      onSelectPlan(plan)
+                      setDayPopover(null)
+                    }}
+                    className={`p-3 rounded-lg cursor-pointer transition-all hover:shadow-md border-l-4 ${
+                      isActive
+                        ? 'border-green-500 bg-green-50 hover:bg-green-100'
+                        : isPast
+                        ? 'border-gray-400 bg-gray-50 hover:bg-gray-100'
+                        : 'border-blue-500 bg-blue-50 hover:bg-blue-100'
+                    }`}
+                  >
+                    <h5 className="font-medium text-gray-900 text-sm">{plan.name}</h5>
+                    {plan.description && (
+                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">{plan.description}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        isActive
+                          ? 'bg-green-200 text-green-800'
+                          : isPast
+                          ? 'bg-gray-200 text-gray-700'
+                          : 'bg-blue-200 text-blue-800'
+                      }`}>
+                        {isActive ? 'Active' : isPast ? 'Past' : 'Upcoming'}
+                      </span>
+                      {start && end && (
+                        <span className="text-xs text-gray-500">
+                          {formatDate(plan.start_date!)} - {formatDate(plan.end_date!)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

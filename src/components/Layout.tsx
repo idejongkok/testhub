@@ -189,8 +189,8 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
       {/* Main Content */}
-      <div className="pl-64 min-h-screen flex flex-col">
-        <main className="p-8 pb-24 flex-1">
+      <div className="pl-64 h-screen flex flex-col">
+        <main className="p-6 flex-1 overflow-hidden">
           {children}
         </main>
 

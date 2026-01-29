@@ -15,6 +15,9 @@ import {
   Bug,
   FileText,
   GripVertical,
+  Link2,
+  Check,
+  Link as LinkIcon,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database, ResultStatus } from '@/types/database'
@@ -46,13 +49,29 @@ interface TestRunDetailProps {
   testRun: TestRun
   onClose: () => void
   onUpdate: () => void
+  onCopyLink?: () => void
+  linkCopied?: boolean
 }
 
 interface EnrichedResult extends TestRunResult {
   test_case?: TestCase
 }
 
-export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDetailProps) {
+interface Attachment {
+  type: 'upload' | 'link'
+  url: string
+  name: string
+}
+
+interface ExecutionState {
+  result_status: ResultStatus
+  actual_result: string
+  comments: string
+  attachments: Attachment[]
+  execution_time: number
+}
+
+export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, linkCopied }: TestRunDetailProps) {
   const { user } = useAuthStore()
   const { currentProject } = useProjectStore()
   const navigate = useNavigate()
@@ -64,7 +83,16 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<ResultStatus | 'all'>('all')
   const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null)
+  const [selectedResult, setSelectedResult] = useState<EnrichedResult | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const [executionData, setExecutionData] = useState<ExecutionState>({
+    result_status: 'untested',
+    actual_result: '',
+    comments: '',
+    attachments: [],
+    execution_time: 0
+  })
+  const [savingExecution, setSavingExecution] = useState(false)
 
   useEffect(() => {
     fetchResults()
@@ -281,6 +309,95 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
     })
   }
 
+  const openDetailWithExecution = (result: EnrichedResult) => {
+    setSelectedTestCase(result.test_case || null)
+    setSelectedResult(result)
+    setExecutionData({
+      result_status: result.result_status,
+      actual_result: result.actual_result || '',
+      comments: result.comments || '',
+      attachments: (result.attachments as unknown as Attachment[]) || [],
+      execution_time: result.execution_time || 0
+    })
+    setShowDetailModal(true)
+  }
+
+  const closeDetailModal = () => {
+    setShowDetailModal(false)
+    setSelectedTestCase(null)
+    setSelectedResult(null)
+    setExecutionData({
+      result_status: 'untested',
+      actual_result: '',
+      comments: '',
+      attachments: [],
+      execution_time: 0
+    })
+  }
+
+  const updateExecutionData = (updates: Partial<ExecutionState>) => {
+    setExecutionData(prev => ({ ...prev, ...updates }))
+  }
+
+  const handleAddLink = () => {
+    const url = prompt('Enter Google Drive link (or any URL):')
+    if (!url) return
+
+    const name = prompt('Enter link name (optional):') || (() => {
+      try {
+        return new URL(url).hostname
+      } catch {
+        return 'Link'
+      }
+    })()
+
+    updateExecutionData({
+      attachments: [...executionData.attachments, {
+        type: 'link',
+        url,
+        name
+      }]
+    })
+  }
+
+  const handleRemoveAttachment = (index: number) => {
+    updateExecutionData({
+      attachments: executionData.attachments.filter((_, i) => i !== index)
+    })
+  }
+
+  const saveExecutionData = async () => {
+    if (!selectedResult || !user) return
+
+    setSavingExecution(true)
+    try {
+      const resultData = {
+        result_status: executionData.result_status,
+        actual_result: executionData.actual_result || null,
+        comments: executionData.comments || null,
+        attachments: executionData.attachments.length > 0 ? executionData.attachments : null,
+        execution_time: executionData.execution_time || 0,
+        executed_by: user.id,
+        executed_at: new Date().toISOString()
+      }
+
+      await supabase
+        .from('test_run_results')
+        .update(resultData)
+        .eq('id', selectedResult.id)
+
+      await updateTestRunStatus()
+      fetchResults()
+      onUpdate()
+      closeDetailModal()
+    } catch (error) {
+      console.error('Save error:', error)
+      alert('Failed to save result')
+    } finally {
+      setSavingExecution(false)
+    }
+  }
+
   const getStatusIcon = (status: ResultStatus) => {
     switch (status) {
       case 'passed':
@@ -376,10 +493,7 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
           <div className="flex-1">
             <h4
               className="font-medium text-gray-900 hover:text-primary-600 cursor-pointer"
-              onClick={() => {
-                setSelectedTestCase(result.test_case || null)
-                setShowDetailModal(true)
-              }}
+              onClick={() => openDetailWithExecution(result)}
             >
               {result.test_case?.title || 'Unknown Test Case'}
             </h4>
@@ -414,12 +528,9 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
           {/* Quick Actions */}
           <div className="flex gap-1">
             <button
-              onClick={() => {
-                setSelectedTestCase(result.test_case || null)
-                setShowDetailModal(true)
-              }}
+              onClick={() => openDetailWithExecution(result)}
               className="p-2 hover:bg-blue-50 rounded"
-              title="View Details"
+              title="View Details & Execute"
             >
               <FileText className="w-4 h-4 text-blue-600" />
             </button>
@@ -488,9 +599,30 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
                 <span className="text-gray-600">Total: {stats.total}</span>
               </div>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {onCopyLink && (
+                <button
+                  onClick={onCopyLink}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                  title="Copy shareable link"
+                >
+                  {linkCopied ? (
+                    <>
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-green-600">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="w-4 h-4" />
+                      <span>Copy Link</span>
+                    </>
+                  )}
+                </button>
+              )}
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </CardHeader>
 
@@ -693,10 +825,10 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
         </div>
       )}
 
-      {/* Test Case Detail Modal */}
+      {/* Test Case Detail Modal with Execution */}
       {showDetailModal && selectedTestCase && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <Card className="w-full max-w-3xl max-h-[90vh] flex flex-col">
+          <Card className="w-full max-w-5xl max-h-[90vh] flex flex-col">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="flex-1">
@@ -740,7 +872,7 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
                   </div>
                 </div>
                 <button
-                  onClick={() => setShowDetailModal(false)}
+                  onClick={closeDetailModal}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <X className="w-5 h-5" />
@@ -748,75 +880,258 @@ export default function TestRunDetail({ testRun, onClose, onUpdate }: TestRunDet
               </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto">
-              {/* Description */}
-              {selectedTestCase.description && (
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                  <p className="text-gray-700 whitespace-pre-wrap">{selectedTestCase.description}</p>
-                </div>
-              )}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column - Test Case Details */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-900 border-b pb-2">Test Case Details</h3>
 
-              {/* Preconditions */}
-              {selectedTestCase.preconditions && (
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">Preconditions</h3>
-                  <p className="text-gray-700 whitespace-pre-wrap">{selectedTestCase.preconditions}</p>
-                </div>
-              )}
+                  {/* Description */}
+                  {selectedTestCase.description && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-1">Description</h4>
+                      <p className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-3 rounded">{selectedTestCase.description}</p>
+                    </div>
+                  )}
 
-              {/* Steps */}
-              {selectedTestCase.steps && Array.isArray(selectedTestCase.steps) && selectedTestCase.steps.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-3">Test Steps</h3>
-                  <div className="space-y-3">
-                    {(selectedTestCase.steps as Array<{ step_number: number; action: string; expected_result: string }>).map((step, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-start gap-3">
-                          <span className="flex-shrink-0 w-6 h-6 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center text-sm font-medium">
-                            {step.step_number}
-                          </span>
-                          <div className="flex-1">
-                            <div className="mb-2">
-                              <span className="font-medium text-gray-900">Action:</span>
-                              <p className="text-gray-700 mt-1">{step.action}</p>
-                            </div>
-                            <div>
-                              <span className="font-medium text-gray-900">Expected Result:</span>
-                              <p className="text-gray-700 mt-1">{step.expected_result}</p>
+                  {/* Preconditions */}
+                  {selectedTestCase.preconditions && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-1">Preconditions</h4>
+                      <p className="text-sm text-gray-600 whitespace-pre-wrap bg-blue-50 p-3 rounded">{selectedTestCase.preconditions}</p>
+                    </div>
+                  )}
+
+                  {/* Steps */}
+                  {selectedTestCase.steps && Array.isArray(selectedTestCase.steps) && selectedTestCase.steps.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Test Steps</h4>
+                      <div className="space-y-2">
+                        {(selectedTestCase.steps as Array<{ step_number: number; action: string; expected_result: string }>).map((step, index) => (
+                          <div key={index} className="border border-gray-200 rounded-lg p-3 text-sm">
+                            <div className="flex items-start gap-2">
+                              <span className="flex-shrink-0 w-5 h-5 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center text-xs font-medium">
+                                {step.step_number || index + 1}
+                              </span>
+                              <div className="flex-1 space-y-1">
+                                <div>
+                                  <span className="text-xs font-medium text-gray-500">Action:</span>
+                                  <p className="text-gray-700 whitespace-pre-wrap">{step.action}</p>
+                                </div>
+                                {step.expected_result && (
+                                  <div>
+                                    <span className="text-xs font-medium text-gray-500">Expected:</span>
+                                    <p className="text-green-700 whitespace-pre-wrap">{step.expected_result}</p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
-              {/* Expected Result (legacy) */}
-              {selectedTestCase.expected_result && (
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">Expected Result</h3>
-                  <p className="text-gray-700 whitespace-pre-wrap">{selectedTestCase.expected_result}</p>
-                </div>
-              )}
+                  {/* Expected Result (legacy) */}
+                  {selectedTestCase.expected_result && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-1">Expected Result</h4>
+                      <p className="text-sm text-gray-600 whitespace-pre-wrap bg-green-50 p-3 rounded">{selectedTestCase.expected_result}</p>
+                    </div>
+                  )}
 
-              {/* Tags */}
-              {selectedTestCase.tags && selectedTestCase.tags.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">Tags</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedTestCase.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded"
+                  {/* Tags */}
+                  {selectedTestCase.tags && selectedTestCase.tags.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-1">Tags</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedTestCase.tags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column - Execution Form */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-900 border-b pb-2">Execution</h3>
+
+                  {/* Status Selection */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Result Status</h4>
+                    <div className="grid grid-cols-4 gap-2">
+                      <button
+                        onClick={() => updateExecutionData({ result_status: 'passed' })}
+                        className={`p-2 rounded-lg border-2 transition-all ${
+                          executionData.result_status === 'passed'
+                            ? 'border-green-500 bg-green-50'
+                            : 'border-gray-200 hover:border-green-300'
+                        }`}
                       >
-                        {tag}
-                      </span>
-                    ))}
+                        <CheckCircle className={`w-5 h-5 mx-auto mb-1 ${
+                          executionData.result_status === 'passed' ? 'text-green-600' : 'text-gray-400'
+                        }`} />
+                        <span className="text-xs font-medium">Passed</span>
+                      </button>
+
+                      <button
+                        onClick={() => updateExecutionData({ result_status: 'failed' })}
+                        className={`p-2 rounded-lg border-2 transition-all ${
+                          executionData.result_status === 'failed'
+                            ? 'border-red-500 bg-red-50'
+                            : 'border-gray-200 hover:border-red-300'
+                        }`}
+                      >
+                        <XCircle className={`w-5 h-5 mx-auto mb-1 ${
+                          executionData.result_status === 'failed' ? 'text-red-600' : 'text-gray-400'
+                        }`} />
+                        <span className="text-xs font-medium">Failed</span>
+                      </button>
+
+                      <button
+                        onClick={() => updateExecutionData({ result_status: 'blocked' })}
+                        className={`p-2 rounded-lg border-2 transition-all ${
+                          executionData.result_status === 'blocked'
+                            ? 'border-yellow-500 bg-yellow-50'
+                            : 'border-gray-200 hover:border-yellow-300'
+                        }`}
+                      >
+                        <AlertCircle className={`w-5 h-5 mx-auto mb-1 ${
+                          executionData.result_status === 'blocked' ? 'text-yellow-600' : 'text-gray-400'
+                        }`} />
+                        <span className="text-xs font-medium">Blocked</span>
+                      </button>
+
+                      <button
+                        onClick={() => updateExecutionData({ result_status: 'skipped' })}
+                        className={`p-2 rounded-lg border-2 transition-all ${
+                          executionData.result_status === 'skipped'
+                            ? 'border-gray-500 bg-gray-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <Clock className={`w-5 h-5 mx-auto mb-1 ${
+                          executionData.result_status === 'skipped' ? 'text-gray-600' : 'text-gray-400'
+                        }`} />
+                        <span className="text-xs font-medium">Skipped</span>
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Actual Result */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Actual Result
+                    </label>
+                    <textarea
+                      value={executionData.actual_result}
+                      onChange={(e) => updateExecutionData({ actual_result: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      rows={3}
+                      placeholder="Describe what actually happened..."
+                    />
+                  </div>
+
+                  {/* Comments */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Comments
+                    </label>
+                    <textarea
+                      value={executionData.comments}
+                      onChange={(e) => updateExecutionData({ comments: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      rows={2}
+                      placeholder="Additional notes..."
+                    />
+                  </div>
+
+                  {/* Attachments */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Attachments
+                    </label>
+                    <Button type="button" variant="secondary" size="sm" onClick={handleAddLink}>
+                      <LinkIcon className="w-4 h-4 mr-1" />
+                      Add Link
+                    </Button>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Tip: Upload to Google Drive, then paste link here
+                    </p>
+
+                    {executionData.attachments.length > 0 && (
+                      <div className="space-y-2 mt-2">
+                        {executionData.attachments.map((att, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
+                            <a
+                              href={att.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary-600 hover:underline flex items-center gap-1"
+                            >
+                              <LinkIcon className="w-3 h-3" />
+                              {att.name}
+                            </a>
+                            <button
+                              onClick={() => handleRemoveAttachment(index)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Execution Time */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Execution Time (minutes)
+                    </label>
+                    <Input
+                      type="number"
+                      value={executionData.execution_time}
+                      onChange={(e) => updateExecutionData({ execution_time: parseInt(e.target.value) || 0 })}
+                      min={0}
+                    />
+                  </div>
+
+                  {/* Report Bug Button */}
+                  {selectedResult && (
+                    <div className="pt-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          handleReportBug(selectedResult)
+                          closeDetailModal()
+                        }}
+                        className="w-full"
+                      >
+                        <Bug className="w-4 h-4 mr-2" />
+                        Report Bug
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </CardContent>
+
+            {/* Footer Actions */}
+            <div className="border-t p-4 flex justify-end gap-2">
+              <Button variant="secondary" onClick={closeDetailModal}>
+                Cancel
+              </Button>
+              <Button onClick={saveExecutionData} disabled={savingExecution}>
+                {savingExecution ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
           </Card>
         </div>
       )}

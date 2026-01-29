@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { useProjectStore } from '@/store/projectStore'
 import Layout from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Plus, X, Edit2, Trash2, Bug, ExternalLink, User, Eye, MessageSquare, Send, Ticket, Settings, Loader2 } from 'lucide-react'
+import { Plus, X, Edit2, Trash2, Bug, ExternalLink, User, Eye, MessageSquare, Send, Ticket, Settings, Loader2, Link2, Check, Filter, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
 import { jiraService } from '@/lib/services/jiraService'
 import JiraConfigModal from '@/components/JiraConfigModal'
 import { useAuthStore } from '@/store/authStore'
@@ -39,6 +39,7 @@ export default function BugsPage() {
   const { currentProject } = useProjectStore()
   const { user } = useAuthStore()
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [bugs, setBugs] = useState<BugRow[]>([])
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
@@ -52,9 +53,17 @@ export default function BugsPage() {
   const [newComment, setNewComment] = useState('')
   const [loadingComments, setLoadingComments] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [platformFilter, setPlatformFilter] = useState<string>('all')
+  const [environmentFilter, setEnvironmentFilter] = useState<string>('all')
+  const [featureFilter, setFeatureFilter] = useState<string>('all')
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('all')
+  const [reporterFilter, setReporterFilter] = useState<string>('all')
+  const [browserFilter, setBrowserFilter] = useState<string>('all')
   const [creatingJiraFor, setCreatingJiraFor] = useState<string | null>(null)
   const [jiraConfigured, setJiraConfigured] = useState(false)
   const [showJiraConfig, setShowJiraConfig] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -86,10 +95,42 @@ export default function BugsPage() {
     }
   }, [currentProject])
 
+  // Handle bugId URL parameter
+  useEffect(() => {
+    const bugId = searchParams.get('bugId')
+    if (bugId && bugs.length > 0) {
+      const bug = bugs.find(b => b.id === bugId)
+      if (bug) {
+        setViewingBug(bug)
+      }
+    }
+  }, [searchParams, bugs])
+
   const checkJiraConfig = async () => {
     if (!currentProject) return
     const configured = await jiraService.isConfigured(currentProject.id)
     setJiraConfigured(configured)
+  }
+
+  // Open bug detail and update URL
+  const openBugDetail = (bug: BugRow) => {
+    setViewingBug(bug)
+    setSearchParams({ bugId: bug.id })
+  }
+
+  // Close bug detail and remove URL param
+  const closeBugDetail = () => {
+    setViewingBug(null)
+    searchParams.delete('bugId')
+    setSearchParams(searchParams)
+  }
+
+  // Copy shareable link to clipboard
+  const copyBugLink = async () => {
+    const url = `${window.location.origin}${window.location.pathname}?bugId=${viewingBug?.id}`
+    await navigator.clipboard.writeText(url)
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2000)
   }
 
   const handleCreateJiraTicket = async (bug: BugRow) => {
@@ -317,15 +358,75 @@ export default function BugsPage() {
     })
   }
 
+  // Get unique values for filter dropdowns
+  const uniquePlatforms = [...new Set(bugs.map(b => b.platform).filter(Boolean))] as string[]
+  const uniqueEnvironments = [...new Set(bugs.map(b => b.environment).filter(Boolean))] as string[]
+  const uniqueFeatures = [...new Set(bugs.map(b => b.feature).filter(Boolean))] as string[]
+  const uniqueBrowsers = [...new Set(bugs.map(b => b.browser).filter(Boolean))] as string[]
+
   const filteredBugs = bugs.filter(bug => {
+    // Basic filters
     const matchesStatus = statusFilter === 'all' || bug.status === statusFilter
     const matchesSeverity = severityFilter === 'all' || bug.severity === severityFilter
+
+    // Text search - searches across multiple fields
+    const query = searchQuery.toLowerCase()
     const matchesSearch = searchQuery === '' ||
-      bug.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bug.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bug.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-    return matchesStatus && matchesSeverity && matchesSearch
+      bug.title.toLowerCase().includes(query) ||
+      bug.description?.toLowerCase().includes(query) ||
+      bug.feature?.toLowerCase().includes(query) ||
+      bug.platform?.toLowerCase().includes(query) ||
+      bug.environment?.toLowerCase().includes(query) ||
+      bug.browser?.toLowerCase().includes(query) ||
+      bug.device?.toLowerCase().includes(query) ||
+      bug.os?.toLowerCase().includes(query) ||
+      bug.steps_to_reproduce?.toLowerCase().includes(query) ||
+      bug.actual_behavior?.toLowerCase().includes(query) ||
+      bug.expected_behavior?.toLowerCase().includes(query) ||
+      bug.tags?.some(tag => tag.toLowerCase().includes(query)) ||
+      bug.assignee?.full_name?.toLowerCase().includes(query) ||
+      bug.assignee?.email?.toLowerCase().includes(query) ||
+      bug.reporter?.full_name?.toLowerCase().includes(query) ||
+      bug.reporter?.email?.toLowerCase().includes(query)
+
+    // Advanced filters
+    const matchesPlatform = platformFilter === 'all' || bug.platform === platformFilter
+    const matchesEnvironment = environmentFilter === 'all' || bug.environment === environmentFilter
+    const matchesFeature = featureFilter === 'all' || bug.feature === featureFilter
+    const matchesBrowser = browserFilter === 'all' || bug.browser === browserFilter
+    const matchesAssignee = assigneeFilter === 'all' ||
+      (assigneeFilter === '' ? !bug.assigned_to : bug.assigned_to === assigneeFilter)
+    const matchesReporter = reporterFilter === 'all' || bug.reported_by === reporterFilter
+
+    return matchesStatus && matchesSeverity && matchesSearch &&
+           matchesPlatform && matchesEnvironment && matchesFeature &&
+           matchesBrowser && matchesAssignee && matchesReporter
   })
+
+  // Count active filters
+  const activeFilterCount = [
+    statusFilter !== 'all',
+    severityFilter !== 'all',
+    platformFilter !== 'all',
+    environmentFilter !== 'all',
+    featureFilter !== 'all',
+    browserFilter !== 'all',
+    assigneeFilter !== 'all',
+    reporterFilter !== 'all',
+  ].filter(Boolean).length
+
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchQuery('')
+    setStatusFilter('all')
+    setSeverityFilter('all')
+    setPlatformFilter('all')
+    setEnvironmentFilter('all')
+    setFeatureFilter('all')
+    setBrowserFilter('all')
+    setAssigneeFilter('all')
+    setReporterFilter('all')
+  }
 
   const stats = {
     total: bugs.length,
@@ -348,45 +449,48 @@ export default function BugsPage() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Bugs & Issues</h1>
-            <p className="text-gray-600 mt-1">{currentProject.name}</p>
-            <div className="flex gap-4 mt-2 text-sm">
-              <span className="text-red-700">Open: {stats.open}</span>
-              <span className="text-blue-700">In Progress: {stats.inProgress}</span>
-              <span className="text-green-700">Resolved: {stats.resolved}</span>
-              <span className="text-gray-600">Total: {stats.total}</span>
+      <div className="max-w-7xl mx-auto h-full flex flex-col overflow-hidden">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 bg-gray-50 pb-4">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Bugs & Issues</h1>
+              <p className="text-gray-600 mt-1">{currentProject.name}</p>
+              <div className="flex gap-4 mt-2 text-sm">
+                <span className="text-red-700">Open: {stats.open}</span>
+                <span className="text-blue-700">In Progress: {stats.inProgress}</span>
+                <span className="text-green-700">Resolved: {stats.resolved}</span>
+                <span className="text-gray-600">Total: {stats.total}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" onClick={() => setShowJiraConfig(true)} title="JIRA Settings">
+                <Settings className="w-4 h-4 mr-2" />
+                JIRA
+              </Button>
+              <Button onClick={() => setShowModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Report Bug
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => setShowJiraConfig(true)} title="JIRA Settings">
-              <Settings className="w-4 h-4 mr-2" />
-              JIRA
-            </Button>
-            <Button onClick={() => setShowModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Report Bug
-            </Button>
-          </div>
-        </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
+          {/* Filters */}
+          <Card className="shadow-sm">
           <CardContent className="py-4">
-            <div className="flex gap-4">
+            {/* Main Filter Row */}
+            <div className="flex flex-wrap gap-3 items-center">
               <Input
-                placeholder="Search bugs by title, description, or tags..."
+                placeholder="Search title, description, feature, platform, assignee..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 max-w-md"
+                className="flex-1 min-w-[250px] max-w-md"
               />
 
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as BugStatus | 'all')}
-                className="px-4 py-2 border border-gray-300 rounded-lg"
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
               >
                 <option value="all">All Status</option>
                 <option value="open">Open</option>
@@ -399,7 +503,7 @@ export default function BugsPage() {
               <select
                 value={severityFilter}
                 onChange={(e) => setSeverityFilter(e.target.value as BugSeverity | 'all')}
-                className="px-4 py-2 border border-gray-300 rounded-lg"
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
               >
                 <option value="all">All Severity</option>
                 <option value="critical">Critical</option>
@@ -407,11 +511,197 @@ export default function BugsPage() {
                 <option value="medium">Medium</option>
                 <option value="low">Low</option>
               </select>
+
+              <button
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  showAdvancedFilters || activeFilterCount > 0
+                    ? 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Filter className="w-4 h-4" />
+                More Filters
+                {activeFilterCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-primary-600 text-white text-xs rounded-full">
+                    {activeFilterCount}
+                  </span>
+                )}
+                {showAdvancedFilters ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
+
+              {(activeFilterCount > 0 || searchQuery) && (
+                <button
+                  onClick={resetFilters}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Reset all filters"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Reset
+                </button>
+              )}
             </div>
+
+            {/* Advanced Filters */}
+            {showAdvancedFilters && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {/* Platform */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Platform</label>
+                    <select
+                      value={platformFilter}
+                      onChange={(e) => setPlatformFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                      <option value="all">All Platforms</option>
+                      {uniquePlatforms.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Environment */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Environment</label>
+                    <select
+                      value={environmentFilter}
+                      onChange={(e) => setEnvironmentFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                      <option value="all">All Environments</option>
+                      {uniqueEnvironments.map(e => (
+                        <option key={e} value={e}>{e}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Feature */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Feature</label>
+                    <select
+                      value={featureFilter}
+                      onChange={(e) => setFeatureFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                      <option value="all">All Features</option>
+                      {uniqueFeatures.map(f => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Browser */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Browser</label>
+                    <select
+                      value={browserFilter}
+                      onChange={(e) => setBrowserFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                      <option value="all">All Browsers</option>
+                      {uniqueBrowsers.map(b => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Assignee */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Assignee</label>
+                    <select
+                      value={assigneeFilter}
+                      onChange={(e) => setAssigneeFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                      <option value="all">All Assignees</option>
+                      <option value="">Unassigned</option>
+                      {allUsers.map(u => (
+                        <option key={u.id} value={u.id}>{u.full_name || u.email}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Reporter */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Reporter</label>
+                    <select
+                      value={reporterFilter}
+                      onChange={(e) => setReporterFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                      <option value="all">All Reporters</option>
+                      {allUsers.map(u => (
+                        <option key={u.id} value={u.id}>{u.full_name || u.email}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Results Summary */}
+            {(searchQuery || activeFilterCount > 0) && (
+              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-sm">
+                <span className="text-gray-600">
+                  Found <span className="font-medium text-gray-900">{filteredBugs.length}</span> of {bugs.length} bugs
+                </span>
+                {activeFilterCount > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {statusFilter !== 'all' && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                        Status: {statusFilter}
+                      </span>
+                    )}
+                    {severityFilter !== 'all' && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                        Severity: {severityFilter}
+                      </span>
+                    )}
+                    {platformFilter !== 'all' && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                        Platform: {platformFilter}
+                      </span>
+                    )}
+                    {environmentFilter !== 'all' && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                        Env: {environmentFilter}
+                      </span>
+                    )}
+                    {featureFilter !== 'all' && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                        Feature: {featureFilter}
+                      </span>
+                    )}
+                    {browserFilter !== 'all' && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                        Browser: {browserFilter}
+                      </span>
+                    )}
+                    {assigneeFilter !== 'all' && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                        Assignee: {assigneeFilter === '' ? 'Unassigned' : allUsers.find(u => u.id === assigneeFilter)?.full_name || 'Selected'}
+                      </span>
+                    )}
+                    {reporterFilter !== 'all' && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                        Reporter: {allUsers.find(u => u.id === reporterFilter)?.full_name || 'Selected'}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
+        </div>
 
-        {/* Bugs List */}
+        {/* Bugs List - Scrollable */}
+        <div className="flex-1 overflow-y-auto min-h-0 pb-6">
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
@@ -565,7 +855,7 @@ export default function BugsPage() {
                       {/* Actions */}
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => setViewingBug(bug)}
+                          onClick={() => openBugDetail(bug)}
                           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                           title="View Details"
                         >
@@ -620,6 +910,7 @@ export default function BugsPage() {
             ))}
           </div>
         )}
+        </div>
 
         {/* Create/Edit Modal */}
         {showModal && (
@@ -854,9 +1145,28 @@ export default function BugsPage() {
                   <div className="flex-1">
                     <h2 className="text-xl font-semibold text-gray-900">{viewingBug.title}</h2>
                   </div>
-                  <button onClick={() => setViewingBug(null)} className="text-gray-400 hover:text-gray-600 ml-4">
-                    <X className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={copyBugLink}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                      title="Copy shareable link"
+                    >
+                      {linkCopied ? (
+                        <>
+                          <Check className="w-4 h-4 text-green-600" />
+                          <span className="text-green-600">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Link2 className="w-4 h-4" />
+                          <span>Copy Link</span>
+                        </>
+                      )}
+                    </button>
+                    <button onClick={closeBugDetail} className="text-gray-400 hover:text-gray-600">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6 pt-4">
@@ -1147,12 +1457,12 @@ export default function BugsPage() {
 
                 {/* Actions */}
                 <div className="flex justify-end gap-2 pt-4 border-t">
-                  <Button variant="secondary" onClick={() => setViewingBug(null)}>
+                  <Button variant="secondary" onClick={closeBugDetail}>
                     Close
                   </Button>
                   <Button onClick={() => {
                     handleEdit(viewingBug)
-                    setViewingBug(null)
+                    closeBugDetail()
                   }}>
                     <Edit2 className="w-4 h-4 mr-2" />
                     Edit Bug

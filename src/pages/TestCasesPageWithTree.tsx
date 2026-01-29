@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useProjectStore } from '@/store/projectStore'
 import Layout from '@/components/Layout'
 import TestCaseTree from '@/components/TestCaseTree'
@@ -6,7 +7,7 @@ import ImportTestCasesModal from '@/components/ImportTestCasesModal'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Plus, FolderPlus, Search, X, Upload } from 'lucide-react'
+import { Plus, FolderPlus, Search, X, Upload, Link2, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database, TestType, Priority, Status } from '@/types/database'
 
@@ -22,16 +23,18 @@ interface TreeNodeData {
 
 export default function TestCasesPageWithTree() {
   const { currentProject } = useProjectStore()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [testCases, setTestCases] = useState<TestCase[]>([])
   const [testSuites, setTestSuites] = useState<TestSuite[]>([])
   const [treeData, setTreeData] = useState<TreeNodeData[]>([])
   const [expandedSuites, setExpandedSuites] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
-  
+  const [linkCopied, setLinkCopied] = useState(false)
+
   // Selected items
   const [selectedCase, setSelectedCase] = useState<TestCase | null>(null)
   const [selectedSuite, setSelectedSuite] = useState<TestSuite | null>(null)
-  
+
   // Modals
   const [showCaseModal, setShowCaseModal] = useState(false)
   const [showSuiteModal, setShowSuiteModal] = useState(false)
@@ -99,8 +102,46 @@ export default function TestCasesPageWithTree() {
     }
   }, [currentProject, fetchData])
 
+  // Handle caseId URL parameter
+  useEffect(() => {
+    const caseId = searchParams.get('caseId')
+    if (caseId && testCases.length > 0) {
+      const testCase = testCases.find(tc => tc.id === caseId)
+      if (testCase) {
+        setSelectedCase(testCase)
+        setSelectedSuite(null)
+        // Expand parent suite if exists
+        if (testCase.suite_id) {
+          setExpandedSuites(prev => new Set([...prev, testCase.suite_id!]))
+        }
+      }
+    }
+  }, [searchParams, testCases])
+
+  // Update URL when selecting a test case
+  const selectCaseWithUrl = useCallback((tc: TestCase | null) => {
+    setSelectedCase(tc)
+    setSelectedSuite(null)
+    if (tc) {
+      setSearchParams({ caseId: tc.id })
+    } else {
+      searchParams.delete('caseId')
+      setSearchParams(searchParams)
+    }
+  }, [searchParams, setSearchParams])
+
+  // Copy shareable link to clipboard
+  const copyCaseLink = async () => {
+    if (!selectedCase) return
+    const url = `${window.location.origin}${window.location.pathname}?caseId=${selectedCase.id}`
+    await navigator.clipboard.writeText(url)
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2000)
+  }
+
   // Build tree with useMemo for optimization
   const buildTree = useCallback((suites: TestSuite[], cases: TestCase[], expandedSet: Set<string>): TreeNodeData[] => {
+    if (!currentProject) return []
     const suiteMap = new Map<string, TreeNodeData>()
 
     // Create nodes for all suites
@@ -135,7 +176,7 @@ export default function TestCasesPageWithTree() {
     const uncategorizedCases = cases.filter(c => !c.suite_id)
     if (uncategorizedCases.length > 0 || rootNodes.length === 0) {
       rootNodes.push({
-        suite: { id: 'root', name: 'Root', parent_id: null, project_id: currentProject!.id, position: -1 } as any,
+        suite: { id: 'root', name: 'Root', parent_id: null, project_id: currentProject.id, position: -1 } as any,
         children: [],
         testCases: uncategorizedCases,
         isExpanded: true
@@ -542,8 +583,7 @@ export default function TestCasesPageWithTree() {
                 treeData={treeData}
                 onToggleExpand={handleToggleExpand}
                 onSelectCase={(tc) => {
-                  setSelectedCase(tc)
-                  setSelectedSuite(null)
+                  selectCaseWithUrl(tc)
                 }}
                 onSelectSuite={(suite) => {
                   setSelectedSuite(suite)
@@ -641,35 +681,54 @@ export default function TestCasesPageWithTree() {
                       </span>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setEditingCase(selectedCase)
-                      setCaseForm({
-                        title: selectedCase.title,
-                        description: selectedCase.description || '',
-                        test_type: selectedCase.test_type,
-                        priority: selectedCase.priority,
-                        status: selectedCase.status,
-                        suite_id: selectedCase.suite_id,
-                        preconditions: selectedCase.preconditions || '',
-                        steps: Array.isArray(selectedCase.steps) ? selectedCase.steps : [],
-                        expected_result: selectedCase.expected_result || '',
-                        tags: selectedCase.tags ? selectedCase.tags.join(', ') : '',
-                        api_method: selectedCase.api_method || 'GET',
-                        api_endpoint: selectedCase.api_endpoint || '',
-                        api_headers: selectedCase.api_headers ? JSON.stringify(selectedCase.api_headers, null, 2) : '',
-                        api_body: selectedCase.api_body ? JSON.stringify(selectedCase.api_body, null, 2) : '',
-                        api_expected_status: selectedCase.api_expected_status || 200,
-                        api_expected_response: selectedCase.api_expected_response ? JSON.stringify(selectedCase.api_expected_response, null, 2) : '',
-                        mobile_platform: selectedCase.mobile_platform || 'Both',
-                        mobile_device: selectedCase.mobile_device || '',
-                      })
-                      setShowCaseModal(true)
-                    }}
-                  >
-                    Edit
-                  </Button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={copyCaseLink}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors border border-gray-200"
+                      title="Copy shareable link"
+                    >
+                      {linkCopied ? (
+                        <>
+                          <Check className="w-4 h-4 text-green-600" />
+                          <span className="text-green-600">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Link2 className="w-4 h-4" />
+                          <span>Copy Link</span>
+                        </>
+                      )}
+                    </button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditingCase(selectedCase)
+                        setCaseForm({
+                          title: selectedCase.title,
+                          description: selectedCase.description || '',
+                          test_type: selectedCase.test_type,
+                          priority: selectedCase.priority,
+                          status: selectedCase.status,
+                          suite_id: selectedCase.suite_id,
+                          preconditions: selectedCase.preconditions || '',
+                          steps: Array.isArray(selectedCase.steps) ? selectedCase.steps : [],
+                          expected_result: selectedCase.expected_result || '',
+                          tags: selectedCase.tags ? selectedCase.tags.join(', ') : '',
+                          api_method: selectedCase.api_method || 'GET',
+                          api_endpoint: selectedCase.api_endpoint || '',
+                          api_headers: selectedCase.api_headers ? JSON.stringify(selectedCase.api_headers, null, 2) : '',
+                          api_body: selectedCase.api_body ? JSON.stringify(selectedCase.api_body, null, 2) : '',
+                          api_expected_status: selectedCase.api_expected_status || 200,
+                          api_expected_response: selectedCase.api_expected_response ? JSON.stringify(selectedCase.api_expected_response, null, 2) : '',
+                          mobile_platform: selectedCase.mobile_platform || 'Both',
+                          mobile_device: selectedCase.mobile_device || '',
+                        })
+                        setShowCaseModal(true)
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
