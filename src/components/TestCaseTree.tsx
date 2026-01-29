@@ -69,6 +69,7 @@ interface DragItem {
 
 interface TestCaseTreeProps {
   treeData: TreeNodeData[]
+  canDelete?: boolean
   onToggleExpand: (suiteId: string) => void
   onSelectCase: (testCase: TestCase) => void
   onSelectSuite: (suite: TestSuite) => void
@@ -132,6 +133,7 @@ function SortableTestCaseItem({
   onEdit,
   onDelete,
   showCheckbox,
+  canDelete = false,
 }: {
   testCase: TestCase
   depth: number
@@ -142,6 +144,7 @@ function SortableTestCaseItem({
   onEdit: () => void
   onDelete: () => void
   showCheckbox: boolean
+  canDelete?: boolean
 }) {
   const {
     attributes,
@@ -239,18 +242,20 @@ function SortableTestCaseItem({
         >
           <Edit2 className="w-3.5 h-3.5 text-yellow-600" />
         </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            if (confirm(`Delete test case "${testCase.title}"?`)) {
-              onDelete()
-            }
-          }}
-          className="p-1 hover:bg-red-100 rounded transition-colors"
-          title="Delete test case"
-        >
-          <Trash2 className="w-3.5 h-3.5 text-red-600" />
-        </button>
+        {canDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              if (confirm(`Delete test case "${testCase.title}"?`)) {
+                onDelete()
+              }
+            }}
+            className="p-1 hover:bg-red-100 rounded transition-colors"
+            title="Delete test case"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-red-600" />
+          </button>
+        )}
       </div>
     </div>
   )
@@ -264,6 +269,7 @@ function SortableSuiteNode({
   checkedIds,
   onToggleCheck,
   showCheckbox,
+  canDelete = false,
   onToggleExpand,
   onSelectSuite,
   onSelectCase,
@@ -281,6 +287,7 @@ function SortableSuiteNode({
   checkedIds: Set<string>
   onToggleCheck: (id: string) => void
   showCheckbox: boolean
+  canDelete?: boolean
   onToggleExpand: (suiteId: string) => void
   onSelectSuite: (suite: TestSuite) => void
   onSelectCase: (testCase: TestCase) => void
@@ -406,18 +413,20 @@ function SortableSuiteNode({
           >
             <Edit2 className="w-3.5 h-3.5 text-yellow-600" />
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              if (confirm(`Delete suite "${node.suite.name}"? Test cases will be moved to Uncategorized.`)) {
-                onDeleteSuite(node.suite.id)
-              }
-            }}
-            className="p-1 hover:bg-red-100 rounded transition-colors"
-            title="Delete suite"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-red-600" />
-          </button>
+          {canDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (confirm(`Delete suite "${node.suite.name}"? Test cases will be moved to Uncategorized.`)) {
+                  onDeleteSuite(node.suite.id)
+                }
+              }}
+              className="p-1 hover:bg-red-100 rounded transition-colors"
+              title="Delete suite"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-red-600" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -438,6 +447,7 @@ function SortableSuiteNode({
                 checkedIds={checkedIds}
                 onToggleCheck={onToggleCheck}
                 showCheckbox={showCheckbox}
+                canDelete={canDelete}
                 onToggleExpand={onToggleExpand}
                 onSelectSuite={onSelectSuite}
                 onSelectCase={onSelectCase}
@@ -466,6 +476,7 @@ function SortableSuiteNode({
                 isChecked={checkedIds.has(testCase.id)}
                 onToggleCheck={() => onToggleCheck(testCase.id)}
                 showCheckbox={showCheckbox}
+                canDelete={canDelete}
                 onSelect={() => onSelectCase(testCase)}
                 onEdit={() => onEditCase(testCase)}
                 onDelete={() => onDeleteCase(testCase.id)}
@@ -490,6 +501,7 @@ function SortableSuiteNode({
 
 export default function TestCaseTree({
   treeData,
+  canDelete = false,
   onToggleExpand,
   onSelectCase,
   onSelectSuite,
@@ -837,6 +849,7 @@ export default function TestCaseTree({
               checkedIds={checkedIds}
               onToggleCheck={handleToggleCheck}
               showCheckbox={true}
+              canDelete={canDelete}
               onToggleExpand={onToggleExpand}
               onSelectSuite={onSelectSuite}
               onSelectCase={onSelectCase}
@@ -878,6 +891,7 @@ export default function TestCaseTree({
                 isChecked={checkedIds.has(testCase.id)}
                 onToggleCheck={() => handleToggleCheck(testCase.id)}
                 showCheckbox={true}
+                canDelete={canDelete}
                 onSelect={() => onSelectCase(testCase)}
                 onEdit={() => onEditCase(testCase)}
                 onDelete={() => onDeleteCase(testCase.id)}

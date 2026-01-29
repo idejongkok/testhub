@@ -36,6 +36,7 @@ interface TreeNodeData {
 
 interface TestCaseTreeProps {
   treeData: TreeNodeData[]
+  canDelete?: boolean
   onToggleExpand: (suiteId: string) => void
   onSelectCase: (testCase: TestCase) => void
   onSelectSuite: (suite: TestSuite) => void
@@ -55,7 +56,8 @@ const TestCaseItem = memo(({
   onEdit,
   onDelete,
   isSelected,
-  depth
+  depth,
+  canDelete = false
 }: {
   testCase: TestCase
   onSelect: () => void
@@ -63,6 +65,7 @@ const TestCaseItem = memo(({
   onDelete: () => void
   isSelected: boolean
   depth: number
+  canDelete?: boolean
 }) => {
   const getTypeColor = (type: TestType) => {
     switch (type) {
@@ -118,15 +121,17 @@ const TestCaseItem = memo(({
         >
           <Edit2 className="w-3 h-3 text-gray-600" />
         </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            if (confirm('Delete this test case?')) onDelete()
-          }}
-          className="p-1 hover:bg-red-100 rounded"
-        >
-          <Trash2 className="w-3 h-3 text-red-600" />
-        </button>
+        {canDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              if (confirm('Delete this test case?')) onDelete()
+            }}
+            className="p-1 hover:bg-red-100 rounded"
+          >
+            <Trash2 className="w-3 h-3 text-red-600" />
+          </button>
+        )}
       </div>
     </div>
   )
@@ -138,6 +143,7 @@ TestCaseItem.displayName = 'TestCaseItem'
 const SuiteNode = memo(({
   node,
   depth,
+  canDelete = false,
   onToggleExpand,
   onSelectSuite,
   onEditSuite,
@@ -151,6 +157,7 @@ const SuiteNode = memo(({
 }: {
   node: TreeNodeData
   depth: number
+  canDelete?: boolean
   onToggleExpand: (id: string) => void
   onSelectSuite: (suite: TestSuite) => void
   onEditSuite: (suite: TestSuite) => void
@@ -222,17 +229,19 @@ const SuiteNode = memo(({
           >
             <Edit2 className="w-3 h-3 text-gray-600" />
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              if (confirm('Delete this suite and all its contents?')) {
-                onDeleteSuite(node.suite.id)
-              }
-            }}
-            className="p-1 hover:bg-red-100 rounded"
-          >
-            <Trash2 className="w-3 h-3 text-red-600" />
-          </button>
+          {canDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (confirm('Delete this suite and all its contents?')) {
+                  onDeleteSuite(node.suite.id)
+                }
+              }}
+              className="p-1 hover:bg-red-100 rounded"
+            >
+              <Trash2 className="w-3 h-3 text-red-600" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -249,6 +258,7 @@ const SuiteNode = memo(({
               onDelete={() => onDeleteCase(testCase.id)}
               isSelected={selectedId === testCase.id}
               depth={depth}
+              canDelete={canDelete}
             />
           ))}
 
@@ -258,6 +268,7 @@ const SuiteNode = memo(({
               key={child.suite.id}
               node={child}
               depth={depth + 1}
+              canDelete={canDelete}
               onToggleExpand={onToggleExpand}
               onSelectSuite={onSelectSuite}
               onEditSuite={onEditSuite}
@@ -281,6 +292,7 @@ SuiteNode.displayName = 'SuiteNode'
 // Main component with memo
 const TestCaseTreeOptimized = memo(({
   treeData,
+  canDelete = false,
   onToggleExpand,
   onSelectCase,
   onSelectSuite,
@@ -299,6 +311,7 @@ const TestCaseTreeOptimized = memo(({
           key={node.suite.id}
           node={node}
           depth={0}
+          canDelete={canDelete}
           onToggleExpand={onToggleExpand}
           onSelectSuite={onSelectSuite}
           onEditSuite={onEditSuite}

@@ -53,7 +53,21 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       .select()
       .single()
 
-    if (!error && data) {
+    if (!error && data && user) {
+      // Add creator as owner/first member of the project
+      const { error: memberError } = await supabase
+        .from('project_members')
+        .insert([{
+          project_id: data.id,
+          user_id: user.id,
+          role: 'owner',
+          invited_by: user.id
+        }])
+
+      if (memberError) {
+        console.error('Error adding creator as project member:', memberError)
+      }
+
       set((state) => ({
         projects: [data, ...state.projects],
         currentProject: data,

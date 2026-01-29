@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useProjectStore } from '@/store/projectStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import Layout from '@/components/Layout'
 import TestCaseTree from '@/components/TestCaseTree'
 import ImportTestCasesModal from '@/components/ImportTestCasesModal'
@@ -23,6 +24,7 @@ interface TreeNodeData {
 
 export default function TestCasesPageWithTree() {
   const { currentProject } = useProjectStore()
+  const { canDelete } = usePermissions()
   const [searchParams, setSearchParams] = useSearchParams()
   const [testCases, setTestCases] = useState<TestCase[]>([])
   const [testSuites, setTestSuites] = useState<TestSuite[]>([])
@@ -249,6 +251,8 @@ export default function TestCasesPageWithTree() {
   }
 
   const handleDeleteSuite = async (suiteId: string) => {
+    if (!canDelete) return
+
     // Move test cases to uncategorized
     await supabase
       .from('test_cases')
@@ -357,6 +361,8 @@ export default function TestCasesPageWithTree() {
   }
 
   const handleDeleteCase = async (caseId: string) => {
+    if (!canDelete) return
+
     await supabase
       .from('test_cases')
       .delete()
@@ -581,6 +587,7 @@ export default function TestCasesPageWithTree() {
             ) : (
               <TestCaseTree
                 treeData={treeData}
+                canDelete={canDelete}
                 onToggleExpand={handleToggleExpand}
                 onSelectCase={(tc) => {
                   selectCaseWithUrl(tc)

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useProjectStore } from '@/store/projectStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import Layout from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -14,6 +15,7 @@ type TestCase = Database['public']['Tables']['test_cases']['Row']
 
 export default function TestCasesPage() {
   const { currentProject } = useProjectStore()
+  const { canDelete } = usePermissions()
   const [searchParams, setSearchParams] = useSearchParams()
   const [testCases, setTestCases] = useState<TestCase[]>([])
   const [loading, setLoading] = useState(false)
@@ -374,13 +376,15 @@ export default function TestCasesPage() {
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => handleDelete(testCase.id)}
-                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDelete(testCase.id)}
+                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

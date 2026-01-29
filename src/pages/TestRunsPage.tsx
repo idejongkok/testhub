@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useProjectStore } from '@/store/projectStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import Layout from '@/components/Layout'
 import TestRunExecutor from '@/components/TestRunExecutor'
 import TestRunDetail from '@/components/TestRunDetail'
@@ -19,6 +20,7 @@ type TestPlan = Database['public']['Tables']['test_plans']['Row']
 
 export default function TestRunsPage() {
   const { currentProject } = useProjectStore()
+  const { canDelete } = usePermissions()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [testRuns, setTestRuns] = useState<TestRun[]>([])
@@ -585,13 +587,15 @@ export default function TestRunsPage() {
                       >
                         <Copy className="w-4 h-4" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleDelete(run.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {canDelete && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleDelete(run.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

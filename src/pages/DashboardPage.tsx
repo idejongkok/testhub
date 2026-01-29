@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProjectStore } from '@/store/projectStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import Layout from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -12,6 +13,7 @@ import ProjectTeamModal from '@/components/ProjectTeamModal'
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { projects, loading, fetchProjects, createProject, deleteProject, setCurrentProject, currentProject } = useProjectStore()
+  const { canDelete } = usePermissions()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTeamModal, setShowTeamModal] = useState<{id: string, name: string} | null>(null)
   const [formData, setFormData] = useState({
@@ -127,16 +129,18 @@ export default function DashboardPage() {
                       >
                         <Users className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDelete(project.id)
-                        }}
-                        className="text-red-600 hover:text-red-700 p-1"
-                        title="Delete Project"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {canDelete && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(project.id)
+                          }}
+                          className="text-red-600 hover:text-red-700 p-1"
+                          title="Delete Project"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

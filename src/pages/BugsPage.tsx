@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { useProjectStore } from '@/store/projectStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import Layout from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -38,6 +39,7 @@ type BugComment = {
 export default function BugsPage() {
   const { currentProject } = useProjectStore()
   const { user } = useAuthStore()
+  const { canDelete, canConfigureJira } = usePermissions()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [bugs, setBugs] = useState<BugRow[]>([])
@@ -464,7 +466,13 @@ export default function BugsPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="secondary" onClick={() => setShowJiraConfig(true)} title="JIRA Settings">
+              <Button
+                variant="secondary"
+                onClick={() => setShowJiraConfig(true)}
+                title={canConfigureJira ? "JIRA Settings" : "Only administrators can configure JIRA"}
+                disabled={!canConfigureJira}
+                className={!canConfigureJira ? "opacity-50 cursor-not-allowed" : ""}
+              >
                 <Settings className="w-4 h-4 mr-2" />
                 JIRA
               </Button>
@@ -868,13 +876,15 @@ export default function BugsPage() {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handleDelete(bug.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDelete(bug.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                         {/* JIRA Button - Only for Production bugs */}
                         {bug.environment === 'Production' && (
                           bug.jira_ticket_key ? (

@@ -3,12 +3,14 @@ import { supabase } from '@/lib/supabase'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { Card } from './ui/Card'
-import { X, UserPlus, Trash2, Shield, User, Eye } from 'lucide-react'
-import { Database, ProjectRole } from '@/types/database'
+import { X, UserPlus, Trash2, Shield, User } from 'lucide-react'
+import { Database, ProjectRole, UserRole } from '@/types/database'
+import { usePermissions } from '@/hooks/usePermissions'
 
 type ProjectMember = Database['public']['Tables']['project_members']['Row'] & {
   user_email?: string
   user_name?: string
+  user_role?: UserRole
 }
 
 interface ProjectTeamModalProps {
@@ -21,9 +23,9 @@ export default function ProjectTeamModal({ projectId, projectName, onClose }: Pr
   const [members, setMembers] = useState<ProjectMember[]>([])
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
-  const [selectedRole, setSelectedRole] = useState<ProjectRole>('member')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const { canManageTeam } = usePermissions()
 
   useEffect(() => {
     loadMembers()
@@ -32,23 +34,46 @@ export default function ProjectTeamModal({ projectId, projectName, onClose }: Pr
   const loadMembers = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      // First get project members
+      const { data: membersData, error: membersError } = await supabase
         .from('project_members')
-        .select(`
-          *,
-          user_profiles!project_members_user_id_fkey(email, full_name)
-        `)
+        .select('*')
         .eq('project_id', projectId)
         .order('joined_at', { ascending: false })
 
-      if (error) throw error
+      if (membersError) throw membersError
 
-      // Map user data
-      const membersWithUser = data?.map(m => ({
-        ...m,
-        user_email: m.user_profiles?.email,
-        user_name: m.user_profiles?.full_name
-      })) || []
+      if (!membersData || membersData.length === 0) {
+        setMembers([])
+        return
+      }
+
+      // Get user profiles for all member user_ids
+      const userIds = membersData.map(m => m.user_id)
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('id, email, full_name, role')
+        .in('id', userIds)
+
+      if (profilesError) {
+        console.warn('Error fetching user profiles:', profilesError)
+      }
+
+      // Create a map of user profiles by id
+      const profilesMap = new Map(
+        (profilesData || []).map(p => [p.id, p])
+      )
+
+      // Map user data including global role
+      const membersWithUser = membersData.map(m => {
+        const profile = profilesMap.get(m.user_id)
+        return {
+          ...m,
+          user_email: profile?.email,
+          user_name: profile?.full_name,
+          user_role: (profile?.role || 'user') as UserRole
+        }
+      })
 
       setMembers(membersWithUser)
     } catch (err: any) {
@@ -64,6 +89,11 @@ export default function ProjectTeamModal({ projectId, projectName, onClose }: Pr
 
     if (!email) {
       setError('Please enter an email address')
+      return
+    }
+
+    if (!canManageTeam) {
+      setError('Only administrators can add team members')
       return
     }
 
@@ -84,13 +114,13 @@ export default function ProjectTeamModal({ projectId, projectName, onClose }: Pr
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Add member
+      // Add member (role defaults to 'member' for project access)
       const { error: insertError } = await supabase
         .from('project_members')
         .insert({
           project_id: projectId,
           user_id: userData.id,
-          role: selectedRole,
+          role: 'member',
           invited_by: user.id
         })
 
@@ -103,7 +133,7 @@ export default function ProjectTeamModal({ projectId, projectName, onClose }: Pr
         return
       }
 
-      setSuccess(`Successfully added ${email} as ${selectedRole}`)
+      setSuccess(`Successfully added ${email} to the project`)
       setEmail('')
       loadMembers()
     } catch (err: any) {
@@ -112,6 +142,11 @@ export default function ProjectTeamModal({ projectId, projectName, onClose }: Pr
   }
 
   const removeMember = async (memberId: string) => {
+    if (!canManageTeam) {
+      setError('Only administrators can remove team members')
+      return
+    }
+
     if (!confirm('Are you sure you want to remove this member?')) return
 
     try {
@@ -129,21 +164,17 @@ export default function ProjectTeamModal({ projectId, projectName, onClose }: Pr
     }
   }
 
-  const getRoleIcon = (role: ProjectRole) => {
+  const getUserRoleIcon = (role: UserRole) => {
     switch (role) {
-      case 'owner': return <Shield className="w-4 h-4 text-purple-600" />
-      case 'admin': return <Shield className="w-4 h-4 text-blue-600" />
-      case 'member': return <User className="w-4 h-4 text-green-600" />
-      case 'viewer': return <Eye className="w-4 h-4 text-gray-600" />
+      case 'administrator': return <Shield className="w-4 h-4 text-purple-600" />
+      case 'user': return <User className="w-4 h-4 text-blue-600" />
     }
   }
 
-  const getRoleBadgeColor = (role: ProjectRole) => {
+  const getUserRoleBadgeColor = (role: UserRole) => {
     switch (role) {
-      case 'owner': return 'bg-purple-100 text-purple-800'
-      case 'admin': return 'bg-blue-100 text-blue-800'
-      case 'member': return 'bg-green-100 text-green-800'
-      case 'viewer': return 'bg-gray-100 text-gray-800'
+      case 'administrator': return 'bg-purple-100 text-purple-800'
+      case 'user': return 'bg-blue-100 text-blue-800'
     }
   }
 
@@ -164,56 +195,49 @@ export default function ProjectTeamModal({ projectId, projectName, onClose }: Pr
             </button>
           </div>
 
-          {/* Add Member Form */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <UserPlus className="w-5 h-5 text-gray-600" />
-              <h3 className="font-semibold text-gray-900">Add Team Member</h3>
-            </div>
-
-            <div className="flex gap-2">
-              <Input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter user email"
-                type="email"
-                className="flex-1"
-              />
-              <select
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value as ProjectRole)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="viewer">Viewer</option>
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-              </select>
-              <Button onClick={addMember}>
-                Add
-              </Button>
-            </div>
-
-            {error && (
-              <div className="mt-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded">
-                {error}
+          {/* Add Member Form - Only for administrators */}
+          {canManageTeam ? (
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <UserPlus className="w-5 h-5 text-gray-600" />
+                <h3 className="font-semibold text-gray-900">Add Team Member</h3>
               </div>
-            )}
-            {success && (
-              <div className="mt-3 text-sm text-green-600 bg-green-50 px-3 py-2 rounded">
-                {success}
-              </div>
-            )}
 
-            <div className="mt-3 text-xs text-gray-500">
-              <p><strong>Roles:</strong></p>
-              <ul className="list-disc list-inside mt-1 space-y-1">
-                <li><strong>Owner:</strong> Full control (can't be removed)</li>
-                <li><strong>Admin:</strong> Manage members and project settings</li>
-                <li><strong>Member:</strong> Create and edit test cases</li>
-                <li><strong>Viewer:</strong> Read-only access</li>
-              </ul>
+              <div className="flex gap-2">
+                <Input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter user email"
+                  type="email"
+                  className="flex-1"
+                />
+                <Button onClick={addMember}>
+                  Add
+                </Button>
+              </div>
+
+              {error && (
+                <div className="mt-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="mt-3 text-sm text-green-600 bg-green-50 px-3 py-2 rounded">
+                  {success}
+                </div>
+              )}
+
+              <div className="mt-3 text-xs text-gray-500">
+                <p><strong>Note:</strong> User's permission level (Administrator/User) is set globally in their profile, not per-project.</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-yellow-800">
+                Only administrators can add or remove team members.
+              </p>
+            </div>
+          )}
 
           {/* Members List */}
           <div>
@@ -247,12 +271,12 @@ export default function ProjectTeamModal({ projectId, projectName, onClose }: Pr
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(member.role)}`}>
-                        {getRoleIcon(member.role)}
-                        {member.role}
+                      <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getUserRoleBadgeColor(member.user_role || 'user')}`}>
+                        {getUserRoleIcon(member.user_role || 'user')}
+                        {member.user_role === 'administrator' ? 'Admin' : 'User'}
                       </span>
 
-                      {member.role !== 'owner' && (
+                      {canManageTeam && member.role !== 'owner' && (
                         <button
                           onClick={() => removeMember(member.id)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"

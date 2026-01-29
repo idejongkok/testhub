@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useProjectStore } from '@/store/projectStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import Layout from '@/components/Layout'
 import ManageCasesBySuite from '@/components/ManageCasesBySuite'
 import TestPlanCalendar from '@/components/TestPlanCalendar'
@@ -17,6 +18,7 @@ type TestCase = Database['public']['Tables']['test_cases']['Row']
 
 export default function TestPlansPageNew() {
   const { currentProject } = useProjectStore()
+  const { canDelete } = usePermissions()
   const [searchParams, setSearchParams] = useSearchParams()
   const [testPlans, setTestPlans] = useState<TestPlan[]>([])
   const [loading, setLoading] = useState(false)
@@ -413,13 +415,15 @@ export default function TestPlansPageNew() {
                       >
                         <Edit2 className="w-4 h-4" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleDelete(plan.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {canDelete && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleDelete(plan.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

@@ -14,6 +14,7 @@ export type ResultStatus = 'passed' | 'failed' | 'blocked' | 'skipped' | 'in_pro
 export type BugStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'wont_fix'
 export type BugSeverity = 'critical' | 'high' | 'medium' | 'low'
 export type ProjectRole = 'owner' | 'admin' | 'member' | 'viewer'
+export type UserRole = 'administrator' | 'user'
 
 export interface Database {
   public: {
@@ -345,6 +346,7 @@ export interface Database {
           id: string
           email: string
           full_name: string | null
+          role: UserRole
           created_at: string
           updated_at: string
         }
@@ -352,6 +354,7 @@ export interface Database {
           id: string
           email: string
           full_name?: string | null
+          role?: UserRole
           created_at?: string
           updated_at?: string
         }
@@ -359,6 +362,7 @@ export interface Database {
           id?: string
           email?: string
           full_name?: string | null
+          role?: UserRole
           created_at?: string
           updated_at?: string
         }
