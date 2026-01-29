@@ -623,7 +623,7 @@ export default function BugsPage() {
 
         {/* Create/Edit Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-y-auto">
             <Card className="w-full max-w-3xl my-8">
               <CardHeader>
                 <div className="flex justify-between items-center">
@@ -847,7 +847,7 @@ export default function BugsPage() {
 
         {/* View Bug Detail Modal */}
         {viewingBug && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-y-auto">
             <Card className="w-full max-w-3xl my-8 max-h-[90vh] overflow-y-auto">
               <CardHeader className="pb-0">
                 <div className="flex justify-between items-start">
