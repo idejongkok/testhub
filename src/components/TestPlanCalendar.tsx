@@ -47,12 +47,27 @@ export default function TestPlanCalendar({ testPlans, onSelectPlan }: TestPlanCa
   const handleShowMorePlans = (e: React.MouseEvent, date: Date, plans: TestPlan[]) => {
     e.stopPropagation()
     const rect = (e.target as HTMLElement).getBoundingClientRect()
+    const popoverHeight = Math.min(plans.length * 100 + 60, 310) // Estimate popover height
+    const popoverWidth = 350
+
+    // Calculate if popover would go below viewport
+    const spaceBelow = window.innerHeight - rect.bottom - 10
+    const spaceAbove = rect.top - 10
+    const showAbove = spaceBelow < popoverHeight && spaceAbove > spaceBelow
+
+    // Calculate horizontal position
+    let x = rect.left
+    if (x + popoverWidth > window.innerWidth - 10) {
+      x = window.innerWidth - popoverWidth - 10
+    }
+    if (x < 10) x = 10
+
     setDayPopover({
       date,
       plans,
       position: {
-        x: rect.left,
-        y: rect.bottom + 4
+        x,
+        y: showAbove ? rect.top - popoverHeight - 4 : rect.bottom + 4
       }
     })
   }
