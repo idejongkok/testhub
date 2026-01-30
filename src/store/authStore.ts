@@ -100,12 +100,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     set({ loading: false })
 
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      const currentUser = get().user
+
+      // Only process actual auth changes, not token refreshes or session revalidations
+      // SIGNED_OUT: user logged out
+      // SIGNED_IN: user logged in (only matters if we don't have a user)
+      // USER_UPDATED: user profile changed
+      if (event === 'SIGNED_OUT') {
+        set({ user: null, userRole: 'user' })
+        return
+      }
+
+      if (event === 'USER_UPDATED' && session?.user) {
         set({ user: session.user })
         await get().fetchUserRole(session.user.id)
-      } else {
-        set({ user: null, userRole: 'user' })
+        return
+      }
+
+      // For SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED:
+      // Only update if user actually changed (different user ID or no current user)
+      if (session?.user && currentUser?.id !== session.user.id) {
+        set({ user: session.user })
+        await get().fetchUserRole(session.user.id)
       }
     })
   },
