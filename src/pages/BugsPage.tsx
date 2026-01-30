@@ -47,25 +47,107 @@ export default function BugsPage() {
   const [showModal, setShowModal] = useState(false)
   const [viewingBug, setViewingBug] = useState<BugRow | null>(null)
   const [editingBug, setEditingBug] = useState<BugRow | null>(null)
-  const [statusFilter, setStatusFilter] = useState<BugStatus | 'all'>('all')
-  const [severityFilter, setSeverityFilter] = useState<BugSeverity | 'all'>('all')
+  // Initialize filters from URL params
+  const [statusFilter, setStatusFilter] = useState<BugStatus | 'all'>(() => {
+    const param = searchParams.get('status')
+    return (param as BugStatus | 'all') || 'all'
+  })
+  const [severityFilter, setSeverityFilter] = useState<BugSeverity | 'all'>(() => {
+    const param = searchParams.get('severity')
+    return (param as BugSeverity | 'all') || 'all'
+  })
   const [, setPrefillData] = useState<any>(null)
   const [allUsers, setAllUsers] = useState<UserProfile[]>([])
   const [comments, setComments] = useState<BugComment[]>([])
   const [newComment, setNewComment] = useState('')
   const [loadingComments, setLoadingComments] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
-  const [platformFilter, setPlatformFilter] = useState<string>('all')
-  const [environmentFilter, setEnvironmentFilter] = useState<string>('all')
-  const [featureFilter, setFeatureFilter] = useState<string>('all')
-  const [assigneeFilter, setAssigneeFilter] = useState<string>('all')
-  const [reporterFilter, setReporterFilter] = useState<string>('all')
-  const [browserFilter, setBrowserFilter] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '')
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(() => {
+    // Auto-expand advanced filters if any advanced filter is set in URL
+    return !!(searchParams.get('platform') || searchParams.get('environment') ||
+              searchParams.get('feature') || searchParams.get('browser') ||
+              searchParams.get('assignee') || searchParams.get('reporter'))
+  })
+  const [platformFilter, setPlatformFilter] = useState<string>(() => searchParams.get('platform') || 'all')
+  const [environmentFilter, setEnvironmentFilter] = useState<string>(() => searchParams.get('environment') || 'all')
+  const [featureFilter, setFeatureFilter] = useState<string>(() => searchParams.get('feature') || 'all')
+  const [assigneeFilter, setAssigneeFilter] = useState<string>(() => searchParams.get('assignee') || 'all')
+  const [reporterFilter, setReporterFilter] = useState<string>(() => searchParams.get('reporter') || 'all')
+  const [browserFilter, setBrowserFilter] = useState<string>(() => searchParams.get('browser') || 'all')
   const [creatingJiraFor, setCreatingJiraFor] = useState<string | null>(null)
   const [jiraConfigured, setJiraConfigured] = useState(false)
   const [showJiraConfig, setShowJiraConfig] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [filterLinkCopied, setFilterLinkCopied] = useState(false)
+
+  // Sync filters to URL params
+  const updateFilterParams = (updates: Record<string, string>) => {
+    const newParams = new URLSearchParams(searchParams)
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value !== 'all' && value !== '') {
+        newParams.set(key, value)
+      } else {
+        newParams.delete(key)
+      }
+    })
+
+    setSearchParams(newParams, { replace: true })
+  }
+
+  // Wrapper functions to update both state and URL
+  const handleStatusFilterChange = (value: BugStatus | 'all') => {
+    setStatusFilter(value)
+    updateFilterParams({ status: value })
+  }
+
+  const handleSeverityFilterChange = (value: BugSeverity | 'all') => {
+    setSeverityFilter(value)
+    updateFilterParams({ severity: value })
+  }
+
+  const handleSearchQueryChange = (value: string) => {
+    setSearchQuery(value)
+    updateFilterParams({ q: value })
+  }
+
+  const handlePlatformFilterChange = (value: string) => {
+    setPlatformFilter(value)
+    updateFilterParams({ platform: value })
+  }
+
+  const handleEnvironmentFilterChange = (value: string) => {
+    setEnvironmentFilter(value)
+    updateFilterParams({ environment: value })
+  }
+
+  const handleFeatureFilterChange = (value: string) => {
+    setFeatureFilter(value)
+    updateFilterParams({ feature: value })
+  }
+
+  const handleBrowserFilterChange = (value: string) => {
+    setBrowserFilter(value)
+    updateFilterParams({ browser: value })
+  }
+
+  const handleAssigneeFilterChange = (value: string) => {
+    setAssigneeFilter(value)
+    updateFilterParams({ assignee: value })
+  }
+
+  const handleReporterFilterChange = (value: string) => {
+    setReporterFilter(value)
+    updateFilterParams({ reporter: value })
+  }
+
+  // Copy filtered view link
+  const copyFilteredLink = async () => {
+    const url = window.location.href
+    await navigator.clipboard.writeText(url)
+    setFilterLinkCopied(true)
+    setTimeout(() => setFilterLinkCopied(false), 2000)
+  }
 
   const [formData, setFormData] = useState({
     title: '',
@@ -428,6 +510,12 @@ export default function BugsPage() {
     setBrowserFilter('all')
     setAssigneeFilter('all')
     setReporterFilter('all')
+
+    // Clear all filter params from URL, keep bugId if present
+    const newParams = new URLSearchParams()
+    const bugId = searchParams.get('bugId')
+    if (bugId) newParams.set('bugId', bugId)
+    setSearchParams(newParams, { replace: true })
   }
 
   const stats = {
@@ -491,13 +579,13 @@ export default function BugsPage() {
               <Input
                 placeholder="Search title, description, feature, platform, assignee..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchQueryChange(e.target.value)}
                 className="flex-1 min-w-[250px] max-w-md"
               />
 
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as BugStatus | 'all')}
+                onChange={(e) => handleStatusFilterChange(e.target.value as BugStatus | 'all')}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
               >
                 <option value="all">All Status</option>
@@ -510,7 +598,7 @@ export default function BugsPage() {
 
               <select
                 value={severityFilter}
-                onChange={(e) => setSeverityFilter(e.target.value as BugSeverity | 'all')}
+                onChange={(e) => handleSeverityFilterChange(e.target.value as BugSeverity | 'all')}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
               >
                 <option value="all">All Severity</option>
@@ -543,14 +631,33 @@ export default function BugsPage() {
               </button>
 
               {(activeFilterCount > 0 || searchQuery) && (
-                <button
-                  onClick={resetFilters}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Reset all filters"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Reset
-                </button>
+                <>
+                  <button
+                    onClick={copyFilteredLink}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
+                    title="Copy link with current filters"
+                  >
+                    {filterLinkCopied ? (
+                      <>
+                        <Check className="w-4 h-4 text-green-600" />
+                        <span className="text-green-600">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Link2 className="w-4 h-4" />
+                        <span>Share</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={resetFilters}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Reset all filters"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset
+                  </button>
+                </>
               )}
             </div>
 
@@ -563,7 +670,7 @@ export default function BugsPage() {
                     <label className="block text-xs font-medium text-gray-500 mb-1">Platform</label>
                     <select
                       value={platformFilter}
-                      onChange={(e) => setPlatformFilter(e.target.value)}
+                      onChange={(e) => handlePlatformFilterChange(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                     >
                       <option value="all">All Platforms</option>
@@ -578,7 +685,7 @@ export default function BugsPage() {
                     <label className="block text-xs font-medium text-gray-500 mb-1">Environment</label>
                     <select
                       value={environmentFilter}
-                      onChange={(e) => setEnvironmentFilter(e.target.value)}
+                      onChange={(e) => handleEnvironmentFilterChange(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                     >
                       <option value="all">All Environments</option>
@@ -593,7 +700,7 @@ export default function BugsPage() {
                     <label className="block text-xs font-medium text-gray-500 mb-1">Feature</label>
                     <select
                       value={featureFilter}
-                      onChange={(e) => setFeatureFilter(e.target.value)}
+                      onChange={(e) => handleFeatureFilterChange(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                     >
                       <option value="all">All Features</option>
@@ -608,7 +715,7 @@ export default function BugsPage() {
                     <label className="block text-xs font-medium text-gray-500 mb-1">Browser</label>
                     <select
                       value={browserFilter}
-                      onChange={(e) => setBrowserFilter(e.target.value)}
+                      onChange={(e) => handleBrowserFilterChange(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                     >
                       <option value="all">All Browsers</option>
@@ -623,7 +730,7 @@ export default function BugsPage() {
                     <label className="block text-xs font-medium text-gray-500 mb-1">Assignee</label>
                     <select
                       value={assigneeFilter}
-                      onChange={(e) => setAssigneeFilter(e.target.value)}
+                      onChange={(e) => handleAssigneeFilterChange(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                     >
                       <option value="all">All Assignees</option>
@@ -639,7 +746,7 @@ export default function BugsPage() {
                     <label className="block text-xs font-medium text-gray-500 mb-1">Reporter</label>
                     <select
                       value={reporterFilter}
-                      onChange={(e) => setReporterFilter(e.target.value)}
+                      onChange={(e) => handleReporterFilterChange(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                     >
                       <option value="all">All Reporters</option>
