@@ -190,7 +190,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main Content */}
       <div className="pl-64 h-screen flex flex-col">
-        <main className="p-6 flex-1 overflow-hidden">
+        <main className="p-6 flex-1 overflow-y-auto">
           {children}
         </main>
 
