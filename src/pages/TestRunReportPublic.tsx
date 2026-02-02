@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Download, CheckCircle, XCircle, AlertCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react'
+import { Download, CheckCircle, XCircle, AlertCircle, Clock, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
 import { formatDateTime } from '@/lib/utils'
@@ -296,6 +296,13 @@ export default function TestRunReportPublic() {
                             {hasSteps && (
                               <span className="text-xs text-gray-500">
                                 ({(result.test_cases?.steps as any[]).length} steps)
+                              </span>
+                            )}
+
+                            {result.retest_count > 0 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
+                                <RotateCcw className="w-3 h-3" />
+                                Retest x{result.retest_count}
                               </span>
                             )}
                           </div>

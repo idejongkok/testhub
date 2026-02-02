@@ -18,9 +18,11 @@ import {
   Link2,
   Check,
   Link as LinkIcon,
+  History,
+  RotateCcw,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { Database, ResultStatus } from '@/types/database'
+import { Database, ResultStatus, TestResultHistory } from '@/types/database'
 import { useAuthStore } from '@/store/authStore'
 import { useProjectStore } from '@/store/projectStore'
 import {
@@ -93,6 +95,9 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
     execution_time: 0
   })
   const [savingExecution, setSavingExecution] = useState(false)
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
+  const [historyData, setHistoryData] = useState<TestResultHistory[]>([])
+  const [historyTestCaseName, setHistoryTestCaseName] = useState('')
 
   useEffect(() => {
     fetchResults()
@@ -371,6 +376,33 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
 
     setSavingExecution(true)
     try {
+      // Check if this is a retest (previous result was already tested)
+      const isRetest = selectedResult.result_status !== 'untested' && selectedResult.executed_at
+
+      let newHistory: TestResultHistory[] = []
+      let newRetestCount = selectedResult.retest_count || 0
+
+      if (isRetest) {
+        // Get current history
+        const currentHistory = (selectedResult.history as TestResultHistory[]) || []
+
+        // Create history entry from current result
+        const historyEntry: TestResultHistory = {
+          result_status: selectedResult.result_status,
+          actual_result: selectedResult.actual_result,
+          comments: selectedResult.comments,
+          attachments: selectedResult.attachments,
+          execution_time: selectedResult.execution_time,
+          executed_by: selectedResult.executed_by,
+          executed_at: selectedResult.executed_at,
+          retested_at: new Date().toISOString()
+        }
+
+        // Add to history (newest first)
+        newHistory = [historyEntry, ...currentHistory]
+        newRetestCount = newRetestCount + 1
+      }
+
       const resultData = {
         result_status: executionData.result_status,
         actual_result: executionData.actual_result || null,
@@ -378,7 +410,11 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
         attachments: executionData.attachments.length > 0 ? executionData.attachments : null,
         execution_time: executionData.execution_time || 0,
         executed_by: user.id,
-        executed_at: new Date().toISOString()
+        executed_at: new Date().toISOString(),
+        ...(isRetest && {
+          history: newHistory,
+          retest_count: newRetestCount
+        })
       }
 
       await supabase
@@ -411,6 +447,36 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
       default:
         return <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
     }
+  }
+
+  const openHistory = (result: EnrichedResult) => {
+    const history = (result.history as TestResultHistory[]) || []
+    setHistoryData(history)
+    setHistoryTestCaseName(result.test_case?.title || 'Test Case')
+    setShowHistoryModal(true)
+  }
+
+  const formatHistoryDate = (dateString: string | null) => {
+    if (!dateString) return '-'
+    return new Date(dateString).toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const getStatusLabel = (status: ResultStatus) => {
+    const labels: Record<ResultStatus, string> = {
+      passed: 'Passed',
+      failed: 'Failed',
+      blocked: 'Blocked',
+      skipped: 'Skipped',
+      in_progress: 'In Progress',
+      untested: 'Untested'
+    }
+    return labels[status] || status
   }
 
   const availableTestCases = allTestCases.filter(
@@ -569,6 +635,18 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
             >
               <Bug className="w-4 h-4 text-orange-600" />
             </button>
+            {(result.retest_count > 0 || (result.history && (result.history as any[]).length > 0)) && (
+              <button
+                onClick={() => openHistory(result)}
+                className="p-2 hover:bg-purple-50 rounded relative"
+                title="View History"
+              >
+                <History className="w-4 h-4 text-purple-600" />
+                <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                  {result.retest_count || (result.history as any[])?.length || 0}
+                </span>
+              </button>
+            )}
             <button
               onClick={() => handleRemoveTestCase(result.id)}
               className="p-2 hover:bg-red-50 rounded"
@@ -959,7 +1037,26 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
 
                 {/* Right Column - Execution Form */}
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-gray-900 border-b pb-2">Execution</h3>
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <h3 className="font-semibold text-gray-900">Execution</h3>
+                    {selectedResult && selectedResult.result_status !== 'untested' && selectedResult.executed_at && (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                          <RotateCcw className="w-3 h-3" />
+                          Retest #{(selectedResult.retest_count || 0) + 1}
+                        </span>
+                        {(selectedResult.retest_count > 0 || (selectedResult.history && (selectedResult.history as any[]).length > 0)) && (
+                          <button
+                            onClick={() => openHistory(selectedResult)}
+                            className="text-xs text-purple-600 hover:underline flex items-center gap-1"
+                          >
+                            <History className="w-3 h-3" />
+                            View History
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Status Selection */}
                   <div>
@@ -1130,6 +1227,116 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
               </Button>
               <Button onClick={saveExecutionData} disabled={savingExecution}>
                 {savingExecution ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* History Modal */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
+          <Card className="w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <History className="w-5 h-5 text-purple-600" />
+                    Retest History
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">{historyTestCaseName}</p>
+                </div>
+                <button
+                  onClick={() => setShowHistoryModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto">
+              {historyData.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No retest history available
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {historyData.map((entry, index) => (
+                    <div
+                      key={index}
+                      className={`p-4 rounded-lg border-l-4 ${
+                        entry.result_status === 'passed'
+                          ? 'border-green-500 bg-green-50'
+                          : entry.result_status === 'failed'
+                          ? 'border-red-500 bg-red-50'
+                          : entry.result_status === 'blocked'
+                          ? 'border-yellow-500 bg-yellow-50'
+                          : entry.result_status === 'skipped'
+                          ? 'border-gray-500 bg-gray-50'
+                          : 'border-gray-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded">
+                            #{historyData.length - index}
+                          </span>
+                          {getStatusIcon(entry.result_status)}
+                          <span className="font-medium">{getStatusLabel(entry.result_status)}</span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          <div>Tested: {formatHistoryDate(entry.executed_at)}</div>
+                          <div>Retested: {formatHistoryDate(entry.retested_at)}</div>
+                        </div>
+                      </div>
+
+                      {entry.actual_result && (
+                        <div className="mb-2">
+                          <span className="text-xs font-medium text-gray-600">Actual Result:</span>
+                          <p className="text-sm text-gray-700 mt-1">{entry.actual_result}</p>
+                        </div>
+                      )}
+
+                      {entry.comments && (
+                        <div className="mb-2">
+                          <span className="text-xs font-medium text-gray-600">Comments:</span>
+                          <p className="text-sm text-gray-700 mt-1">{entry.comments}</p>
+                        </div>
+                      )}
+
+                      {entry.attachments && Array.isArray(entry.attachments) && entry.attachments.length > 0 && (
+                        <div>
+                          <span className="text-xs font-medium text-gray-600">Attachments:</span>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {(entry.attachments as Attachment[]).map((att, idx) => (
+                              <a
+                                key={idx}
+                                href={att.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary-600 hover:underline flex items-center gap-1"
+                              >
+                                <LinkIcon className="w-3 h-3" />
+                                {att.name}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {entry.execution_time && entry.execution_time > 0 && (
+                        <div className="text-xs text-gray-500 mt-2">
+                          Execution time: {entry.execution_time} min
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+            <div className="border-t p-4 flex justify-end">
+              <Button variant="secondary" onClick={() => setShowHistoryModal(false)}>
+                Close
               </Button>
             </div>
           </Card>

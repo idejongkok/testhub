@@ -16,6 +16,18 @@ export type BugSeverity = 'critical' | 'high' | 'medium' | 'low'
 export type ProjectRole = 'owner' | 'admin' | 'member' | 'viewer'
 export type UserRole = 'administrator' | 'user'
 
+// History entry for retest tracking
+export interface TestResultHistory {
+  result_status: ResultStatus
+  actual_result: string | null
+  comments: string | null
+  attachments: Json | null
+  execution_time: number | null
+  executed_by: string | null
+  executed_at: string | null
+  retested_at: string // when this result was replaced
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -307,6 +319,8 @@ export interface Database {
           executed_by: string | null
           executed_at: string | null
           position: number
+          history: Json | null
+          retest_count: number
           created_at: string
           updated_at: string
         }
@@ -322,6 +336,8 @@ export interface Database {
           executed_by?: string | null
           executed_at?: string | null
           position?: number
+          history?: Json | null
+          retest_count?: number
           created_at?: string
           updated_at?: string
         }
@@ -337,6 +353,8 @@ export interface Database {
           executed_by?: string | null
           executed_at?: string | null
           position?: number
+          history?: Json | null
+          retest_count?: number
           created_at?: string
           updated_at?: string
         }
