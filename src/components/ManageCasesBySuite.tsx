@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { X, ChevronDown, ChevronRight, Folder, CheckSquare, Square, Link2, Check } from 'lucide-react'
+import { X, ChevronDown, ChevronRight, Folder, CheckSquare, Square, Link2, Check, User } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
 
-type TestCase = Database['public']['Tables']['test_cases']['Row']
+type TestCaseRow = Database['public']['Tables']['test_cases']['Row']
 type TestSuite = Database['public']['Tables']['test_suites']['Row']
+
+interface TestCase extends TestCaseRow {
+  creator?: {
+    email: string
+    full_name: string | null
+  }
+}
 
 interface SuiteWithCases {
   suite: TestSuite | null // null for uncategorized
@@ -51,10 +58,13 @@ export default function ManageCasesBySuite({
       .eq('project_id', projectId)
       .order('name')
 
-    // Fetch test cases
+    // Fetch test cases with creator
     const { data: cases } = await supabase
       .from('test_cases')
-      .select('*')
+      .select(`
+        *,
+        creator:user_profiles!test_cases_created_by_fkey(email, full_name)
+      `)
       .eq('project_id', projectId)
       .eq('status', 'ready')
       .order('title')
@@ -260,6 +270,15 @@ export default function ManageCasesBySuite({
                             <span className="flex-1 text-sm text-gray-700">
                               {testCase.title}
                             </span>
+
+                            {testCase.creator && (
+                              <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0" title={`Created by: ${testCase.creator.full_name || testCase.creator.email}`}>
+                                <User className="w-3 h-3" />
+                                <span className="hidden md:inline max-w-[80px] truncate">
+                                  {testCase.creator.full_name || testCase.creator.email.split('@')[0]}
+                                </span>
+                              </span>
+                            )}
                           </div>
                         ))}
                       </div>

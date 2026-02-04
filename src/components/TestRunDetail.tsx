@@ -11,7 +11,6 @@ import {
   X,
   Plus,
   Trash2,
-  PlayCircle,
   Bug,
   FileText,
   GripVertical,
@@ -20,6 +19,11 @@ import {
   Link as LinkIcon,
   History,
   RotateCcw,
+  ChevronRight,
+  ChevronDown,
+  Folder,
+  FolderOpen,
+  User,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database, ResultStatus, TestResultHistory } from '@/types/database'
@@ -46,6 +50,21 @@ import { CSS } from '@dnd-kit/utilities'
 type TestCase = Database['public']['Tables']['test_cases']['Row']
 type TestRunResult = Database['public']['Tables']['test_run_results']['Row']
 type TestRun = Database['public']['Tables']['test_runs']['Row']
+type TestSuite = Database['public']['Tables']['test_suites']['Row']
+
+interface TestCaseWithCreator extends TestCase {
+  creator?: {
+    email: string
+    full_name: string | null
+  }
+}
+
+interface TreeNodeData {
+  suite: TestSuite | { id: string; name: string; parent_id: null }
+  children: TreeNodeData[]
+  testCases: TestCaseWithCreator[]
+  isExpanded: boolean
+}
 
 interface TestRunDetailProps {
   testRun: TestRun
@@ -78,7 +97,8 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
   const { currentProject } = useProjectStore()
   const navigate = useNavigate()
   const [results, setResults] = useState<EnrichedResult[]>([])
-  const [allTestCases, setAllTestCases] = useState<TestCase[]>([])
+  const [allTestCases, setAllTestCases] = useState<TestCaseWithCreator[]>([])
+  const [allTestSuites, setAllTestSuites] = useState<TestSuite[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
@@ -98,6 +118,12 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [historyData, setHistoryData] = useState<TestResultHistory[]>([])
   const [historyTestCaseName, setHistoryTestCaseName] = useState('')
+
+  // Add Modal states
+  const [addModalSelectedIds, setAddModalSelectedIds] = useState<Set<string>>(new Set())
+  const [addModalTypeFilter, setAddModalTypeFilter] = useState<'all' | 'functional_web' | 'functional_mobile' | 'api'>('all')
+  const [addModalSearch, setAddModalSearch] = useState('')
+  const [addModalExpandedSuites, setAddModalExpandedSuites] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchResults()
@@ -129,14 +155,30 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
   }
 
   const fetchAllTestCases = async () => {
-    const { data } = await supabase
+    // Fetch test cases with creator
+    const { data: casesData } = await supabase
       .from('test_cases')
+      .select(`
+        *,
+        creator:user_profiles!test_cases_created_by_fkey(email, full_name)
+      `)
+      .eq('project_id', testRun.project_id)
+      .order('position')
+
+    // Fetch test suites
+    const { data: suitesData } = await supabase
+      .from('test_suites')
       .select('*')
       .eq('project_id', testRun.project_id)
-      .order('title')
+      .order('position')
 
-    if (data) {
-      setAllTestCases(data)
+    if (casesData) {
+      setAllTestCases(casesData as TestCaseWithCreator[])
+    }
+    if (suitesData) {
+      setAllTestSuites(suitesData)
+      // Expand all suites by default
+      setAddModalExpandedSuites(new Set(suitesData.map(s => s.id)))
     }
   }
 
@@ -479,11 +521,314 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
     return labels[status] || status
   }
 
-  const availableTestCases = allTestCases.filter(
-    tc =>
-      !results.some(r => r.test_case_id === tc.id) &&
-      tc.title.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const availableTestCases = allTestCases.filter(tc => {
+    // Exclude already added test cases
+    if (results.some(r => r.test_case_id === tc.id)) return false
+    // Filter by search (title or test_case_code)
+    if (addModalSearch) {
+      const query = addModalSearch.toLowerCase()
+      const matchesTitle = tc.title.toLowerCase().includes(query)
+      const matchesCode = tc.test_case_code?.toLowerCase().includes(query)
+      if (!matchesTitle && !matchesCode) return false
+    }
+    // Filter by type
+    if (addModalTypeFilter !== 'all' && tc.test_type !== addModalTypeFilter) return false
+    return true
+  })
+
+  // Build tree structure for add modal
+  const buildAddModalTree = (): TreeNodeData[] => {
+    const suiteMap = new Map<string, TreeNodeData>()
+
+    // Create nodes for all suites
+    allTestSuites.forEach(suite => {
+      suiteMap.set(suite.id, {
+        suite,
+        children: [],
+        testCases: [],
+        isExpanded: addModalExpandedSuites.has(suite.id)
+      })
+    })
+
+    // Build hierarchy
+    const rootNodes: TreeNodeData[] = []
+    allTestSuites.forEach(suite => {
+      const node = suiteMap.get(suite.id)!
+      if (suite.parent_id && suiteMap.has(suite.parent_id)) {
+        suiteMap.get(suite.parent_id)!.children.push(node)
+      } else {
+        rootNodes.push(node)
+      }
+    })
+
+    // Attach available test cases (filtered)
+    availableTestCases.forEach(testCase => {
+      if (testCase.suite_id && suiteMap.has(testCase.suite_id)) {
+        suiteMap.get(testCase.suite_id)!.testCases.push(testCase)
+      }
+    })
+
+    // Add root node for uncategorized
+    const uncategorizedCases = availableTestCases.filter(c => !c.suite_id)
+    if (uncategorizedCases.length > 0 || rootNodes.length === 0) {
+      rootNodes.unshift({
+        suite: { id: 'uncategorized', name: 'Uncategorized', parent_id: null },
+        children: [],
+        testCases: uncategorizedCases,
+        isExpanded: addModalExpandedSuites.has('uncategorized')
+      })
+    }
+
+    return rootNodes
+  }
+
+  const toggleAddModalSuiteExpand = (suiteId: string) => {
+    setAddModalExpandedSuites(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(suiteId)) {
+        newSet.delete(suiteId)
+      } else {
+        newSet.add(suiteId)
+      }
+      return newSet
+    })
+  }
+
+  // Get count of available test cases in a suite (including children)
+  const getAvailableCountInSuite = (node: TreeNodeData): number => {
+    let count = node.testCases.length
+    node.children.forEach(child => {
+      count += getAvailableCountInSuite(child)
+    })
+    return count
+  }
+
+  // Select all test cases in a suite (including children)
+  const selectAllInSuite = (node: TreeNodeData) => {
+    const ids: string[] = []
+    const collectIds = (n: TreeNodeData) => {
+      n.testCases.forEach(tc => ids.push(tc.id))
+      n.children.forEach(child => collectIds(child))
+    }
+    collectIds(node)
+
+    setAddModalSelectedIds(prev => {
+      const newSet = new Set(prev)
+      ids.forEach(id => newSet.add(id))
+      return newSet
+    })
+  }
+
+  // Check if all test cases in suite are selected
+  const areAllInSuiteSelected = (node: TreeNodeData): boolean => {
+    const ids: string[] = []
+    const collectIds = (n: TreeNodeData) => {
+      n.testCases.forEach(tc => ids.push(tc.id))
+      n.children.forEach(child => collectIds(child))
+    }
+    collectIds(node)
+    return ids.length > 0 && ids.every(id => addModalSelectedIds.has(id))
+  }
+
+  const addModalTreeData = buildAddModalTree()
+
+  // Tree Node Component for Add Modal
+  function AddModalTreeNode({
+    node,
+    level,
+    selectedIds,
+    onToggleExpand,
+    onToggleSelection,
+    onSelectAllInSuite,
+    areAllSelected,
+    getAvailableCount,
+  }: {
+    node: TreeNodeData
+    level: number
+    selectedIds: Set<string>
+    onToggleExpand: (id: string) => void
+    onToggleSelection: (id: string) => void
+    onSelectAllInSuite: (node: TreeNodeData) => void
+    areAllSelected: (node: TreeNodeData) => boolean
+    getAvailableCount: (node: TreeNodeData) => number
+  }) {
+    const hasContent = node.testCases.length > 0 || node.children.length > 0
+    const availableCount = getAvailableCount(node)
+    const allSelected = areAllSelected(node)
+
+    if (!hasContent) return null
+
+    return (
+      <div>
+        {/* Suite Header */}
+        <div
+          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer"
+          style={{ marginLeft: level * 16 }}
+        >
+          {/* Expand/Collapse */}
+          <button
+            onClick={() => onToggleExpand(node.suite.id)}
+            className="p-0.5 hover:bg-gray-200 rounded"
+          >
+            {node.isExpanded ? (
+              <ChevronDown className="w-4 h-4 text-gray-500" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-gray-500" />
+            )}
+          </button>
+
+          {/* Folder Icon */}
+          {node.isExpanded ? (
+            <FolderOpen className="w-4 h-4 text-yellow-500" />
+          ) : (
+            <Folder className="w-4 h-4 text-yellow-500" />
+          )}
+
+          {/* Suite Name */}
+          <span className="font-medium text-gray-900 flex-1">{node.suite.name}</span>
+
+          {/* Count Badge */}
+          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+            {availableCount}
+          </span>
+
+          {/* Select All in Suite */}
+          {availableCount > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onSelectAllInSuite(node)
+              }}
+              className={`text-xs px-2 py-0.5 rounded transition-colors ${
+                allSelected
+                  ? 'bg-primary-100 text-primary-700'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {allSelected ? 'Selected' : 'Select All'}
+            </button>
+          )}
+        </div>
+
+        {/* Expanded Content */}
+        {node.isExpanded && (
+          <div>
+            {/* Child Suites */}
+            {node.children.map(child => (
+              <AddModalTreeNode
+                key={child.suite.id}
+                node={child}
+                level={level + 1}
+                selectedIds={selectedIds}
+                onToggleExpand={onToggleExpand}
+                onToggleSelection={onToggleSelection}
+                onSelectAllInSuite={onSelectAllInSuite}
+                areAllSelected={areAllSelected}
+                getAvailableCount={getAvailableCount}
+              />
+            ))}
+
+            {/* Test Cases */}
+            {node.testCases.map(tc => (
+              <div
+                key={tc.id}
+                className={`flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                  selectedIds.has(tc.id)
+                    ? 'bg-primary-50 border border-primary-200'
+                    : 'hover:bg-gray-50 border border-transparent'
+                }`}
+                style={{ marginLeft: (level + 1) * 16 + 8 }}
+                onClick={() => onToggleSelection(tc.id)}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(tc.id)}
+                  onChange={() => onToggleSelection(tc.id)}
+                  onClick={e => e.stopPropagation()}
+                  className="mt-1 rounded"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`px-1.5 py-0.5 text-xs rounded ${
+                        tc.test_type === 'api'
+                          ? 'bg-purple-100 text-purple-700'
+                          : tc.test_type === 'functional_mobile'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-blue-100 text-blue-700'
+                      }`}
+                    >
+                      {tc.test_type === 'api' ? 'API' : tc.test_type === 'functional_mobile' ? 'Mobile' : 'Web'}
+                    </span>
+                    <span
+                      className={`px-1.5 py-0.5 text-xs rounded ${
+                        tc.priority === 'critical'
+                          ? 'bg-red-100 text-red-700'
+                          : tc.priority === 'high'
+                          ? 'bg-orange-100 text-orange-700'
+                          : tc.priority === 'medium'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {tc.priority}
+                    </span>
+                    {tc.creator && (
+                      <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                        <User className="w-3 h-3" />
+                        {tc.creator.full_name || tc.creator.email}
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="font-medium text-gray-900 text-sm mt-1 truncate">{tc.title}</h4>
+                  {tc.description && (
+                    <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{tc.description}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Open add modal and reset state
+  const openAddModal = () => {
+    setAddModalSelectedIds(new Set())
+    setAddModalSearch('')
+    setAddModalTypeFilter('all')
+    setShowAddModal(true)
+  }
+
+  // Toggle selection in add modal
+  const toggleAddModalSelection = (id: string) => {
+    setAddModalSelectedIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }
+
+  // Select all available test cases
+  const selectAllAvailable = () => {
+    if (addModalSelectedIds.size === availableTestCases.length) {
+      setAddModalSelectedIds(new Set())
+    } else {
+      setAddModalSelectedIds(new Set(availableTestCases.map(tc => tc.id)))
+    }
+  }
+
+  // Add selected test cases
+  const addSelectedTestCases = async () => {
+    if (addModalSelectedIds.size === 0) return
+    await handleAddTestCases(Array.from(addModalSelectedIds))
+    setAddModalSelectedIds(new Set())
+  }
 
   // Filter results by status and search query
   const filteredResults = results
@@ -704,101 +1049,105 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto">
-          {/* Bulk Actions */}
-          {selectedIds.size > 0 && (
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
-              <span className="text-sm font-medium text-blue-900">
-                {selectedIds.size} selected
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleBulkStatusChange('passed')}
-                >
-                  <CheckCircle className="w-4 h-4 mr-1 text-green-600" />
-                  Pass
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleBulkStatusChange('failed')}
-                >
-                  <XCircle className="w-4 h-4 mr-1 text-red-600" />
-                  Fail
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleBulkStatusChange('blocked')}
-                >
-                  <AlertCircle className="w-4 h-4 mr-1 text-yellow-600" />
-                  Block
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleBulkStatusChange('skipped')}
-                >
-                  <Clock className="w-4 h-4 mr-1 text-gray-600" />
-                  Skip
-                </Button>
-                <Button size="sm" variant="secondary" onClick={handleBulkRemove}>
-                  <Trash2 className="w-4 h-4 mr-1 text-red-600" />
-                  Remove
-                </Button>
+        <CardContent className="flex-1 overflow-hidden flex flex-col">
+          {/* Fixed Header Section */}
+          <div className="flex-shrink-0 pb-4">
+            {/* Bulk Actions */}
+            {selectedIds.size > 0 && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+                <span className="text-sm font-medium text-blue-900">
+                  {selectedIds.size} selected
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleBulkStatusChange('passed')}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1 text-green-600" />
+                    Pass
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleBulkStatusChange('failed')}
+                  >
+                    <XCircle className="w-4 h-4 mr-1 text-red-600" />
+                    Fail
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleBulkStatusChange('blocked')}
+                  >
+                    <AlertCircle className="w-4 h-4 mr-1 text-yellow-600" />
+                    Block
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleBulkStatusChange('skipped')}
+                  >
+                    <Clock className="w-4 h-4 mr-1 text-gray-600" />
+                    Skip
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={handleBulkRemove}>
+                    <Trash2 className="w-4 h-4 mr-1 text-red-600" />
+                    Remove
+                  </Button>
+                </div>
               </div>
+            )}
+
+            {/* Actions Bar */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={openAddModal}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Test Cases
+                  </Button>
+                  <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.size === filteredResults.length && filteredResults.length > 0}
+                      onChange={toggleSelectAll}
+                      className="rounded"
+                    />
+                    Select All
+                  </label>
+                </div>
+
+                {/* Status Filter */}
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700">Filter:</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as ResultStatus | 'all')}
+                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">All ({stats.total})</option>
+                    <option value="passed">✓ Passed ({stats.passed})</option>
+                    <option value="failed">✗ Failed ({stats.failed})</option>
+                    <option value="blocked">⊘ Blocked ({stats.blocked})</option>
+                    <option value="skipped">↷ Skipped ({stats.skipped})</option>
+                    <option value="untested">− Untested ({stats.untested})</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <Input
+                placeholder="Search test cases by title or description..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full"
+              />
             </div>
-          )}
-
-          {/* Actions Bar */}
-          <div className="mb-4 space-y-3">
-            <div className="flex justify-between items-center">
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => setShowAddModal(true)}>
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Test Cases
-                </Button>
-                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.size === filteredResults.length && filteredResults.length > 0}
-                    onChange={toggleSelectAll}
-                    className="rounded"
-                  />
-                  Select All
-                </label>
-              </div>
-
-              {/* Status Filter */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">Filter:</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as ResultStatus | 'all')}
-                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="all">All ({stats.total})</option>
-                  <option value="passed">✓ Passed ({stats.passed})</option>
-                  <option value="failed">✗ Failed ({stats.failed})</option>
-                  <option value="blocked">⊘ Blocked ({stats.blocked})</option>
-                  <option value="skipped">↷ Skipped ({stats.skipped})</option>
-                  <option value="untested">− Untested ({stats.untested})</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Search Bar */}
-            <Input
-              placeholder="Search test cases by title or description..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full"
-            />
           </div>
 
-          {/* Test Cases List */}
+          {/* Scrollable Test Cases List */}
+          <div className="flex-1 overflow-y-auto min-h-0">
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
@@ -829,16 +1178,24 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
               </SortableContext>
             </DndContext>
           )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Add Test Cases Modal */}
+      {/* Add Test Cases Modal - Tree View */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <Card className="w-full max-w-2xl max-h-[80vh] flex flex-col">
+          <Card className="w-full max-w-4xl max-h-[85vh] flex flex-col">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Add Test Cases</CardTitle>
+                <div>
+                  <CardTitle>Add Test Cases</CardTitle>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {addModalSelectedIds.size > 0
+                      ? `${addModalSelectedIds.size} test case(s) selected`
+                      : 'Select test cases to add to this test run'}
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowAddModal(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -848,57 +1205,85 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
               </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto">
-              <Input
-                placeholder="Search test cases..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="mb-4"
-              />
+              {/* Filters */}
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Search test cases by title..."
+                    value={addModalSearch}
+                    onChange={e => setAddModalSearch(e.target.value)}
+                  />
+                </div>
+                <select
+                  value={addModalTypeFilter}
+                  onChange={e => setAddModalTypeFilter(e.target.value as any)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="all">All Types</option>
+                  <option value="functional_web">Web</option>
+                  <option value="functional_mobile">Mobile</option>
+                  <option value="api">API</option>
+                </select>
+              </div>
 
+              {/* Select All */}
+              {availableTestCases.length > 0 && (
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={addModalSelectedIds.size === availableTestCases.length && availableTestCases.length > 0}
+                      onChange={selectAllAvailable}
+                      className="rounded"
+                    />
+                    Select All ({availableTestCases.length})
+                  </label>
+                </div>
+              )}
+
+              {/* Tree View */}
               {availableTestCases.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">
-                  {searchQuery
-                    ? 'No test cases found matching your search'
+                  {addModalSearch || addModalTypeFilter !== 'all'
+                    ? 'No test cases found matching your filters'
                     : 'All test cases are already added to this run'}
                 </p>
               ) : (
-                <div className="space-y-2">
-                  {availableTestCases.map(tc => (
-                    <div
-                      key={tc.id}
-                      className="p-3 border border-gray-200 rounded-lg hover:border-primary-500 cursor-pointer"
-                      onClick={() => handleAddTestCases([tc.id])}
-                    >
-                      <h4 className="font-medium text-gray-900">{tc.title}</h4>
-                      <div className="flex gap-2 mt-1">
-                        <span
-                          className={`px-2 py-0.5 text-xs rounded ${
-                            tc.test_type === 'api'
-                              ? 'bg-purple-100 text-purple-700'
-                              : tc.test_type === 'functional_mobile'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-blue-100 text-blue-700'
-                          }`}
-                        >
-                          {tc.test_type === 'api' ? 'API' : tc.test_type === 'functional_mobile' ? 'Mobile' : 'Web'}
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 text-xs rounded ${
-                            tc.priority === 'critical'
-                              ? 'bg-red-100 text-red-700'
-                              : tc.priority === 'high'
-                              ? 'bg-orange-100 text-orange-700'
-                              : 'bg-gray-100 text-gray-700'
-                          }`}
-                        >
-                          {tc.priority}
-                        </span>
-                      </div>
-                    </div>
+                <div className="space-y-1">
+                  {addModalTreeData.map(node => (
+                    <AddModalTreeNode
+                      key={node.suite.id}
+                      node={node}
+                      level={0}
+                      selectedIds={addModalSelectedIds}
+                      onToggleExpand={toggleAddModalSuiteExpand}
+                      onToggleSelection={toggleAddModalSelection}
+                      onSelectAllInSuite={selectAllInSuite}
+                      areAllSelected={areAllInSuiteSelected}
+                      getAvailableCount={getAvailableCountInSuite}
+                    />
                   ))}
                 </div>
               )}
             </CardContent>
+
+            {/* Footer */}
+            <div className="border-t p-4 flex justify-between items-center">
+              <span className="text-sm text-gray-500">
+                {availableTestCases.length} test case(s) available
+              </span>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={addSelectedTestCases}
+                  disabled={addModalSelectedIds.size === 0}
+                >
+                  Add {addModalSelectedIds.size > 0 ? `(${addModalSelectedIds.size})` : ''} Test Cases
+                </Button>
+              </div>
+            </div>
           </Card>
         </div>
       )}

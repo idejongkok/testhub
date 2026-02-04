@@ -448,6 +448,15 @@ export default function BugsPage() {
   const uniqueFeatures = [...new Set(bugs.map(b => b.feature).filter(Boolean))] as string[]
   const uniqueBrowsers = [...new Set(bugs.map(b => b.browser).filter(Boolean))] as string[]
 
+  // Status priority for sorting (lower number = higher priority)
+  const statusPriority: Record<BugStatus, number> = {
+    open: 1,
+    in_progress: 2,
+    resolved: 3,
+    closed: 4,
+    wont_fix: 5,
+  }
+
   const filteredBugs = bugs.filter(bug => {
     // Basic filters
     const matchesStatus = statusFilter === 'all' || bug.status === statusFilter
@@ -485,6 +494,12 @@ export default function BugsPage() {
     return matchesStatus && matchesSeverity && matchesSearch &&
            matchesPlatform && matchesEnvironment && matchesFeature &&
            matchesBrowser && matchesAssignee && matchesReporter
+  }).sort((a, b) => {
+    // Sort by status priority (open first, then in_progress, resolved, closed, wont_fix)
+    const priorityDiff = statusPriority[a.status] - statusPriority[b.status]
+    if (priorityDiff !== 0) return priorityDiff
+    // Secondary sort by created_at (newest first) within same status
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   })
 
   // Count active filters

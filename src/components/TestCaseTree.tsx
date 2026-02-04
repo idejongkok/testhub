@@ -9,7 +9,7 @@ import {
   Plus,
   FolderPlus,
   GripVertical,
-  Check
+  Check,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TestType, Priority, Status } from '@/types/database'
@@ -43,6 +43,10 @@ interface TestCase {
   status: Status
   suite_id: string | null
   position: number
+  creator?: {
+    email: string
+    full_name: string | null
+  }
 }
 
 interface TestSuite {

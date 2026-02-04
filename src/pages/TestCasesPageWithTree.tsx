@@ -8,12 +8,19 @@ import ImportTestCasesModal from '@/components/ImportTestCasesModal'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Plus, FolderPlus, Search, X, Upload, Link2, Check } from 'lucide-react'
+import { Plus, FolderPlus, Search, X, Upload, Link2, Check, User } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database, TestType, Priority, Status } from '@/types/database'
 
-type TestCase = Database['public']['Tables']['test_cases']['Row']
+type TestCaseRow = Database['public']['Tables']['test_cases']['Row']
 type TestSuite = Database['public']['Tables']['test_suites']['Row']
+
+interface TestCase extends TestCaseRow {
+  creator?: {
+    email: string
+    full_name: string | null
+  }
+}
 
 interface TreeNodeData {
   suite: TestSuite
@@ -85,15 +92,18 @@ export default function TestCasesPageWithTree() {
       .eq('project_id', currentProject.id)
       .order('position')
 
-    // Fetch test cases
+    // Fetch test cases with creator
     const { data: casesData } = await supabase
       .from('test_cases')
-      .select('*')
+      .select(`
+        *,
+        creator:user_profiles!test_cases_created_by_fkey(email, full_name)
+      `)
       .eq('project_id', currentProject.id)
       .order('position')
 
     if (suitesData) setTestSuites(suitesData)
-    if (casesData) setTestCases(casesData)
+    if (casesData) setTestCases(casesData as TestCase[])
 
     setLoading(false)
   }, [currentProject])
@@ -687,6 +697,12 @@ export default function TestCasesPageWithTree() {
                         {selectedCase.status}
                       </span>
                     </div>
+                    {selectedCase.creator && (
+                      <div className="flex items-center gap-2 mt-3 text-sm text-gray-600">
+                        <User className="w-4 h-4" />
+                        <span>Created by: <span className="font-medium">{selectedCase.creator.full_name || selectedCase.creator.email}</span></span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <button
