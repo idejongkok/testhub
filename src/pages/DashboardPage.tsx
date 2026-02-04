@@ -50,12 +50,12 @@ export default function DashboardPage() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6 md:mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Projects</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Projects</h1>
             <p className="text-gray-600 mt-1">Manage your QA testing projects</p>
           </div>
-          <Button onClick={() => setShowCreateModal(true)}>
+          <Button onClick={() => setShowCreateModal(true)} className="self-start md:self-auto">
             <Plus className="w-4 h-4 mr-2" />
             New Project
           </Button>

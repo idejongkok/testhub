@@ -478,28 +478,29 @@ export default function TestRunExecutor({
 
         {/* Navigation Footer */}
         <div className="border-t p-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-wrap justify-between items-center gap-2">
             <Button
               variant="secondary"
+              size="sm"
               onClick={handleSaveAndPrevious}
               disabled={currentIndex === 0 || saving}
             >
-              <ChevronLeft className="w-4 h-4 mr-2" />
+              <ChevronLeft className="w-4 h-4 mr-1" />
               Previous
             </Button>
 
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={handleSaveAndClose} disabled={saving}>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" onClick={handleSaveAndClose} disabled={saving}>
                 {saving ? 'Saving...' : 'Save & Close'}
               </Button>
-              
+
               {currentIndex < testCases.length - 1 ? (
-                <Button onClick={handleSaveAndNext} disabled={saving}>
+                <Button size="sm" onClick={handleSaveAndNext} disabled={saving}>
                   Save & Next
-                  <ChevronRight className="w-4 h-4 ml-2" />
+                  <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
-                <Button onClick={handleSaveAndClose} disabled={saving}>
+                <Button size="sm" onClick={handleSaveAndClose} disabled={saving}>
                   Finish
                 </Button>
               )}

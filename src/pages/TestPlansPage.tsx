@@ -256,34 +256,36 @@ export default function TestPlansPageNew() {
       <div className="max-w-7xl mx-auto h-full flex flex-col overflow-hidden">
         {/* Fixed Header */}
         <div className="flex-shrink-0 bg-gray-50 pb-4">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Test Plans</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Test Plans</h1>
               <p className="text-gray-600 mt-1">{currentProject.name}</p>
-              <div className="flex gap-4 mt-2 text-sm">
+              <div className="flex flex-wrap gap-2 md:gap-4 mt-2 text-sm">
                 <span className="text-blue-700">Upcoming: {stats.upcoming}</span>
                 <span className="text-green-700">Ongoing: {stats.ongoing}</span>
                 <span className="text-gray-500">Past: {stats.past}</span>
                 <span className="text-gray-600">Total: {stats.total}</span>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
+                size="sm"
                 variant={viewMode === 'list' ? 'default' : 'secondary'}
                 onClick={() => setViewMode('list')}
               >
-                <ListIcon className="w-4 h-4 mr-2" />
+                <ListIcon className="w-4 h-4 mr-1 md:mr-2" />
                 List
               </Button>
               <Button
+                size="sm"
                 variant={viewMode === 'calendar' ? 'default' : 'secondary'}
                 onClick={() => setViewMode('calendar')}
               >
-                <Calendar className="w-4 h-4 mr-2" />
+                <Calendar className="w-4 h-4 mr-1 md:mr-2" />
                 Calendar
               </Button>
-              <Button onClick={() => setShowModal(true)}>
-                <Plus className="w-4 h-4 mr-2" />
+              <Button size="sm" onClick={() => setShowModal(true)}>
+                <Plus className="w-4 h-4 mr-1 md:mr-2" />
                 New Test Plan
               </Button>
             </div>
@@ -299,7 +301,7 @@ export default function TestPlansPageNew() {
                     placeholder="Search test plans..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1 min-w-[200px] max-w-sm"
+                    className="flex-1 min-w-0 max-w-sm"
                   />
 
                   <select
@@ -385,13 +387,13 @@ export default function TestPlansPageNew() {
               {filteredPlans.map(plan => (
               <Card key={plan.id}>
                 <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-900">{plan.name}</h3>
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg md:text-xl font-semibold text-gray-900">{plan.name}</h3>
                       {plan.description && (
-                        <p className="text-gray-600 mt-1">{plan.description}</p>
+                        <p className="text-gray-600 mt-1 text-sm">{plan.description}</p>
                       )}
-                      <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                      <div className="flex flex-wrap gap-2 md:gap-4 mt-2 text-sm text-gray-600">
                         {plan.start_date && (
                           <span>Start: {formatDate(plan.start_date)}</span>
                         )}
@@ -400,7 +402,7 @@ export default function TestPlansPageNew() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         size="sm"
                         variant="secondary"

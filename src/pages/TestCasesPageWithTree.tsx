@@ -545,40 +545,44 @@ export default function TestCasesPageWithTree() {
 
   return (
     <Layout>
-      <div className="max-w-[1600px] mx-auto h-[calc(100vh-100px)]">
-        <div className="flex justify-between items-center mb-6">
+      <div className="max-w-[1600px] mx-auto md:h-[calc(100vh-100px)]">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4 md:mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Test Cases</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Test Cases</h1>
             <p className="text-gray-600 mt-1">{currentProject.name}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="secondary"
+              size="sm"
               onClick={() => setShowImportModal(true)}
             >
-              <Upload className="w-4 h-4 mr-2" />
-              Import CSV
+              <Upload className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Import CSV</span>
+              <span className="sm:hidden">Import</span>
             </Button>
-            <Button onClick={() => {
+            <Button size="sm" onClick={() => {
               setSuiteForm({ name: '', description: '', parent_id: null })
               setShowSuiteModal(true)
             }}>
-              <FolderPlus className="w-4 h-4 mr-2" />
-              New Suite
+              <FolderPlus className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">New Suite</span>
+              <span className="sm:hidden">Suite</span>
             </Button>
-            <Button onClick={() => {
+            <Button size="sm" onClick={() => {
               resetCaseForm()
               setShowCaseModal(true)
             }}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Test Case
+              <Plus className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">New Test Case</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-12 gap-6 h-full">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 md:h-full">
           {/* Left: Tree Sidebar */}
-          <div className="col-span-4 bg-white rounded-lg border border-gray-200 p-4 overflow-y-auto">
+          <div className="md:col-span-4 bg-white rounded-lg border border-gray-200 p-4 overflow-y-auto max-h-[50vh] md:max-h-none">
             <div className="mb-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -662,17 +666,17 @@ export default function TestCasesPageWithTree() {
           </div>
 
           {/* Right: Detail Panel */}
-          <div className="col-span-8 bg-white rounded-lg border border-gray-200 p-6 overflow-y-auto">
+          <div className="md:col-span-8 bg-white rounded-lg border border-gray-200 p-4 md:p-6 overflow-y-auto max-h-[60vh] md:max-h-none">
             {selectedCase ? (
               <div>
-                <div className="flex justify-between items-start mb-6">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3 mb-4 md:mb-6">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="font-mono text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded">
+                      <span className="font-mono text-xs md:text-sm text-gray-500 bg-gray-100 px-2 md:px-3 py-1 rounded">
                         {selectedCase.test_case_code}
                       </span>
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedCase.title}</h2>
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-900">{selectedCase.title}</h2>
                     <div className="flex gap-2 mt-2">
                       <span className={`px-2 py-1 text-xs font-medium rounded ${
                         selectedCase.test_type === 'api' ? 'bg-purple-100 text-purple-700' :
@@ -913,7 +917,7 @@ export default function TestCasesPageWithTree() {
                     required
                   />
                   
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                       <select
@@ -1028,8 +1032,8 @@ export default function TestCasesPageWithTree() {
                   {caseForm.test_type === 'api' && (
                     <div className="space-y-4 p-4 bg-purple-50 rounded-lg">
                       <h3 className="font-medium">API Details</h3>
-                      <div className="grid grid-cols-4 gap-2">
-                        <div className="col-span-1">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <div className="md:col-span-1">
                           <select
                             value={caseForm.api_method}
                             onChange={(e) => setCaseForm({ ...caseForm, api_method: e.target.value })}
@@ -1041,7 +1045,7 @@ export default function TestCasesPageWithTree() {
                             <option value="DELETE">DELETE</option>
                           </select>
                         </div>
-                        <div className="col-span-3">
+                        <div className="md:col-span-3">
                           <input
                             value={caseForm.api_endpoint}
                             onChange={(e) => setCaseForm({ ...caseForm, api_endpoint: e.target.value })}

@@ -1009,11 +1009,11 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-7xl max-h-[90vh] flex flex-col">
         <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
+            <div className="flex-1 min-w-0">
               <CardTitle>{testRun.name}</CardTitle>
               <p className="text-sm text-gray-600 mt-1">{testRun.description}</p>
-              <div className="flex gap-4 mt-2 text-sm">
+              <div className="flex flex-wrap gap-2 md:gap-4 mt-2 text-sm">
                 <span className="text-green-700">✓ {stats.passed}</span>
                 <span className="text-red-700">✗ {stats.failed}</span>
                 <span className="text-yellow-700">⊘ {stats.blocked}</span>
@@ -1022,7 +1022,7 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
                 <span className="text-gray-600">Total: {stats.total}</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end md:self-auto">
               {onCopyLink && (
                 <button
                   onClick={onCopyLink}
@@ -1054,11 +1054,11 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
           <div className="flex-shrink-0 pb-4">
             {/* Bulk Actions */}
             {selectedIds.size > 0 && (
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <span className="text-sm font-medium text-blue-900">
                   {selectedIds.size} selected
                 </span>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     variant="secondary"
@@ -1101,8 +1101,8 @@ export default function TestRunDetail({ testRun, onClose, onUpdate, onCopyLink, 
 
             {/* Actions Bar */}
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <div className="flex flex-wrap gap-2 items-center">
                   <Button size="sm" onClick={openAddModal}>
                     <Plus className="w-4 h-4 mr-1" />
                     Add Test Cases

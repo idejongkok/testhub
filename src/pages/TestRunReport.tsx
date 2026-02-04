@@ -161,39 +161,39 @@ export default function TestRunReport() {
     <Layout>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-start mb-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3 mb-6">
           <div>
             <Button variant="secondary" size="sm" onClick={() => navigate('/test-runs')} className="mb-3">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Test Runs
             </Button>
-            <h1 className="text-3xl font-bold text-gray-900">{testRun.name}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{testRun.name}</h1>
             {testRun.description && (
               <p className="text-gray-600 mt-1">{testRun.description}</p>
             )}
-            <div className="flex gap-4 mt-2 text-sm text-gray-600">
-              <span>Environment: <span className="font-medium">{testRun.environment}</span></span>
+            <div className="flex flex-wrap gap-2 md:gap-4 mt-2 text-sm text-gray-600">
+              <span>Env: <span className="font-medium">{testRun.environment}</span></span>
               <span>Status: <span className={`font-medium ${
                 testRun.run_status === 'completed' ? 'text-green-600' :
                 testRun.run_status === 'in_progress' ? 'text-blue-600' : 'text-gray-600'
               }`}>{testRun.run_status}</span></span>
-              <span>Created: {formatDateTime(testRun.created_at)}</span>
+              <span>{formatDateTime(testRun.created_at)}</span>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={handleShare}>
-              <Share2 className="w-4 h-4 mr-2" />
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={handleShare}>
+              <Share2 className="w-4 h-4 mr-1 md:mr-2" />
               Share
             </Button>
-            <Button variant="secondary" onClick={handleDownload}>
-              <Download className="w-4 h-4 mr-2" />
+            <Button variant="secondary" size="sm" onClick={handleDownload}>
+              <Download className="w-4 h-4 mr-1 md:mr-2" />
               Export CSV
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-7 gap-4 mb-6">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3 md:gap-4 mb-6">
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-gray-900">{stats.total}</div>

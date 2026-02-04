@@ -557,18 +557,18 @@ export default function BugsPage() {
       <div className="max-w-7xl mx-auto h-full flex flex-col overflow-hidden">
         {/* Fixed Header */}
         <div className="flex-shrink-0 bg-gray-50 pb-4">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Bugs & Issues</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Bugs & Issues</h1>
               <p className="text-gray-600 mt-1">{currentProject.name}</p>
-              <div className="flex gap-4 mt-2 text-sm">
+              <div className="flex flex-wrap gap-2 md:gap-4 mt-2 text-sm">
                 <span className="text-red-700">Open: {stats.open}</span>
                 <span className="text-blue-700">In Progress: {stats.inProgress}</span>
                 <span className="text-green-700">Resolved: {stats.resolved}</span>
                 <span className="text-gray-600">Total: {stats.total}</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-start md:self-auto">
               <Button
                 variant="secondary"
                 onClick={() => setShowJiraConfig(true)}
@@ -595,7 +595,7 @@ export default function BugsPage() {
                 placeholder="Search title, description, feature, platform, assignee..."
                 value={searchQuery}
                 onChange={(e) => handleSearchQueryChange(e.target.value)}
-                className="flex-1 min-w-[250px] max-w-md"
+                className="flex-1 min-w-0 max-w-md"
               />
 
               <select
@@ -1079,7 +1079,7 @@ export default function BugsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Severity
@@ -1145,7 +1145,7 @@ export default function BugsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Expected Behavior
@@ -1173,7 +1173,7 @@ export default function BugsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Environment
@@ -1198,7 +1198,7 @@ export default function BugsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
                       label="Device"
                       value={formData.device}
@@ -1214,7 +1214,7 @@ export default function BugsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
                       label="Feature"
                       value={formData.feature}
@@ -1303,7 +1303,7 @@ export default function BugsPage() {
               </CardHeader>
               <CardContent className="space-y-6 pt-4">
                 {/* Status Info Grid */}
-                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
                   <div>
                     <span className="text-xs text-gray-500 uppercase tracking-wide">Status</span>
                     <p className={`text-sm font-semibold mt-1 ${
@@ -1339,7 +1339,7 @@ export default function BugsPage() {
 
                 {/* Feature & Platform */}
                 {(viewingBug.feature || viewingBug.platform) && (
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                     <div>
                       <span className="text-xs text-gray-500 uppercase tracking-wide">Feature</span>
                       <p className="text-sm font-semibold mt-1 text-gray-900">
@@ -1373,7 +1373,7 @@ export default function BugsPage() {
 
                 {/* Expected vs Actual */}
                 {(viewingBug.expected_behavior || viewingBug.actual_behavior) && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">Expected Behavior</h3>
                       <p className="text-sm text-gray-900 bg-green-50 p-3 rounded-lg min-h-[60px]">
@@ -1393,7 +1393,7 @@ export default function BugsPage() {
                 {(viewingBug.browser || viewingBug.device || viewingBug.os) && (
                   <div>
                     <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">Environment Details</h3>
-                    <div className="grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
                       <div>
                         <span className="text-xs text-gray-500 uppercase tracking-wide">Browser</span>
                         <p className="text-sm font-medium text-gray-900 mt-1">{viewingBug.browser || '-'}</p>
@@ -1414,7 +1414,7 @@ export default function BugsPage() {
                 {(viewingBug.reporter || viewingBug.assignee) && (
                   <div>
                     <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-3">People</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                           <User className="w-5 h-5 text-blue-600" />
@@ -1446,7 +1446,7 @@ export default function BugsPage() {
                   <div>
                     <h3 className="text-xs text-gray-500 uppercase tracking-wide mb-2">Related Test</h3>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <span className="text-xs text-gray-500 uppercase tracking-wide">Test Run</span>
                           <p className="text-sm font-medium text-gray-900 mt-1">{viewingBug.test_run?.name || '-'}</p>

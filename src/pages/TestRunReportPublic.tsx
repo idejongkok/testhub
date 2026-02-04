@@ -153,22 +153,22 @@ export default function TestRunReportPublic() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex justify-between items-start">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{testRun.name}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{testRun.name}</h1>
               {testRun.description && (
                 <p className="text-gray-600 mt-2">{testRun.description}</p>
               )}
-              <div className="flex gap-4 mt-3 text-sm text-gray-600">
-                <span>Environment: <span className="font-medium">{testRun.environment}</span></span>
+              <div className="flex flex-wrap gap-2 md:gap-4 mt-3 text-sm text-gray-600">
+                <span>Env: <span className="font-medium">{testRun.environment}</span></span>
                 <span>Status: <span className={`font-medium ${
                   testRun.run_status === 'completed' ? 'text-green-600' :
                   testRun.run_status === 'in_progress' ? 'text-blue-600' : 'text-gray-600'
                 }`}>{testRun.run_status}</span></span>
-                <span>Created: {formatDateTime(testRun.created_at)}</span>
+                <span>{formatDateTime(testRun.created_at)}</span>
               </div>
             </div>
-            <Button onClick={handleDownload}>
+            <Button size="sm" onClick={handleDownload} className="self-start md:self-auto">
               <Download className="w-4 h-4 mr-2" />
               Export CSV
             </Button>
@@ -176,7 +176,7 @@ export default function TestRunReportPublic() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-7 gap-4 mb-6">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3 md:gap-4 mb-6">
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-gray-900">{stats.total}</div>

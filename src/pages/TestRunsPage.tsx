@@ -403,18 +403,18 @@ export default function TestRunsPage() {
       <div className="max-w-7xl mx-auto h-full flex flex-col overflow-hidden">
         {/* Fixed Header */}
         <div className="flex-shrink-0 bg-gray-50 pb-4">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Test Runs</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Test Runs</h1>
               <p className="text-gray-600 mt-1">{currentProject.name}</p>
-              <div className="flex gap-4 mt-2 text-sm">
+              <div className="flex flex-wrap gap-2 md:gap-4 mt-2 text-sm">
                 <span className="text-gray-500">Not Started: {stats.notStarted}</span>
                 <span className="text-blue-700">In Progress: {stats.inProgress}</span>
                 <span className="text-green-700">Completed: {stats.completed}</span>
                 <span className="text-gray-600">Total: {stats.total}</span>
               </div>
             </div>
-            <Button onClick={() => setShowModal(true)}>
+            <Button onClick={() => setShowModal(true)} className="self-start md:self-auto">
               <Plus className="w-4 h-4 mr-2" />
               New Test Run
             </Button>
@@ -429,7 +429,7 @@ export default function TestRunsPage() {
                   placeholder="Search test runs..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 min-w-[200px] max-w-sm"
+                  className="flex-1 min-w-0 max-w-sm"
                 />
 
                 <select
@@ -521,13 +521,13 @@ export default function TestRunsPage() {
               {filteredRuns.map(run => (
               <Card key={run.id}>
                 <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-900">{run.name}</h3>
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg md:text-xl font-semibold text-gray-900">{run.name}</h3>
                       {run.description && (
-                        <p className="text-gray-600 mt-1">{run.description}</p>
+                        <p className="text-gray-600 mt-1 text-sm">{run.description}</p>
                       )}
-                      <div className="flex gap-4 mt-2 text-sm items-center">
+                      <div className="flex flex-wrap gap-2 md:gap-4 mt-2 text-sm items-center">
                         <div className="flex items-center gap-2">
                           <label className="text-xs text-gray-600">Status:</label>
                           <select
@@ -540,15 +540,15 @@ export default function TestRunsPage() {
                             <option value="completed">completed</option>
                           </select>
                         </div>
-                        <span className="text-gray-600">
-                          Environment: <span className="font-medium">{run.environment}</span>
+                        <span className="text-gray-600 text-xs md:text-sm">
+                          Env: <span className="font-medium">{run.environment}</span>
                         </span>
-                        <span className="text-gray-600">
-                          Created: {formatDateTime(run.created_at)}
+                        <span className="text-gray-600 text-xs md:text-sm">
+                          {formatDateTime(run.created_at)}
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         size="sm"
                         onClick={() => handleManage(run)}
